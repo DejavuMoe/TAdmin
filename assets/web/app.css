@@ -1,0 +1,206 @@
+:root {
+  color-scheme: light dark;
+  --page-bg: var(--tg-theme-bg-color, #f4f6f8);
+  --surface: var(--tg-theme-secondary-bg-color, #ffffff);
+  --text: var(--tg-theme-text-color, #182433);
+  --muted: var(--tg-theme-hint-color, #707a86);
+  --accent: var(--tg-theme-button-color, #2aabee);
+  --accent-text: var(--tg-theme-button-text-color, #ffffff);
+  --border: color-mix(in srgb, var(--muted) 28%, transparent);
+  --success: #2b9b67;
+  --danger: var(--tg-theme-destructive-text-color, #d95757);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--page-bg);
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+.verify-shell {
+  width: min(100%, 31rem);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: calc(1rem + env(safe-area-inset-top)) 1rem calc(1.25rem + env(safe-area-inset-bottom));
+}
+
+.topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2.5rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.state-label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.instruction {
+  min-height: 7.2rem;
+  padding: 1.3rem 0 0.9rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.42rem;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.prompt {
+  margin: 0;
+  font-size: clamp(1.06rem, 4.8vw, 1.28rem);
+  font-weight: 650;
+  line-height: 1.55;
+}
+
+.challenge-frame {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: #f8fafc;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 8%);
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.challenge-frame.busy {
+  pointer-events: none;
+  opacity: 0.76;
+}
+
+.challenge-frame img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  cursor: pointer;
+}
+
+.tap-marker {
+  position: absolute;
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid var(--accent-text);
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.62rem;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 1px 6px rgb(0 0 0 / 28%);
+  pointer-events: none;
+}
+
+.marker-cell-0 { left: 16.666%; top: 16.666%; }
+.marker-cell-1 { left: 50%; top: 16.666%; }
+.marker-cell-2 { left: 83.333%; top: 16.666%; }
+.marker-cell-3 { left: 16.666%; top: 50%; }
+.marker-cell-4 { left: 50%; top: 50%; }
+.marker-cell-5 { left: 83.333%; top: 50%; }
+.marker-cell-6 { left: 16.666%; top: 83.333%; }
+.marker-cell-7 { left: 50%; top: 83.333%; }
+.marker-cell-8 { left: 83.333%; top: 83.333%; }
+
+.progress {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr 1fr;
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+  padding: 0.85rem 0.15rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.metric-label {
+  display: block;
+  margin-bottom: 0.28rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.metric-value,
+.step-value {
+  font-size: 0.92rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.step-value {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+}
+
+.step-dot {
+  width: 0.58rem;
+  height: 0.58rem;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+}
+
+.step-dot.active {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.status-message {
+  min-height: 1.5rem;
+  margin: 0.85rem 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.status-message.error {
+  color: var(--danger);
+}
+
+.status-message.success {
+  color: var(--success);
+  font-weight: 700;
+}
+
+@media (max-width: 350px) {
+  .verify-shell {
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+  }
+
+  .progress {
+    gap: 0.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .challenge-frame {
+    transition: opacity 120ms ease;
+  }
+}

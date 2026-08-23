@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>TAdmin</title>
+  <link rel="stylesheet" href="/verify/assets/app.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="/verify/assets/app.js" defer></script>
+</head>
+<body>
+  <main class="verify-shell" aria-labelledby="app-title">
+    <header class="topline">
+      <h1 id="app-title">TAdmin</h1>
+      <span id="state-label" class="state-label" aria-live="polite">连接中</span>
+    </header>
+
+    <section class="instruction" aria-labelledby="instruction-title">
+      <p id="instruction-title" class="eyebrow">入群验证</p>
+      <p id="prompt" class="prompt">正在安全地载入验证题目…</p>
+    </section>
+
+    <div id="challenge-frame" class="challenge-frame" hidden>
+      <img id="challenge-image" alt="3 × 3 随机交互验证图" draggable="false">
+      <div id="tap-markers" class="tap-markers" aria-hidden="true"></div>
+    </div>
+
+    <section class="progress" aria-label="验证进度">
+      <div class="step-block">
+        <span id="step-label" class="metric-label">当前步骤</span>
+        <div class="step-value">
+          <span id="step-dot-1" class="step-dot active"></span>
+          <span id="step-dot-2" class="step-dot"></span>
+          <span id="step-text">1 / 2</span>
+        </div>
+      </div>
+      <div>
+        <span id="time-label" class="metric-label">剩余时间</span>
+        <strong id="time-value" class="metric-value">--:--</strong>
+      </div>
+      <div>
+        <span id="attempt-label" class="metric-label">剩余尝试</span>
+        <strong id="attempt-value" class="metric-value">—</strong>
+      </div>
+    </section>
+
+    <p id="status-message" class="status-message" role="status" aria-live="polite">请稍候。</p>
+  </main>
+</body>
+</html>

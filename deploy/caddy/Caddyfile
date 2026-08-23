@@ -1,0 +1,22 @@
+verify.example.com {
+    log {
+        output discard
+    }
+
+    @verification path /verify/* /api/verify/*
+
+    handle @verification {
+        reverse_proxy 127.0.0.1:8080 {
+            header_up Host {host}
+            header_up X-Forwarded-Proto https
+            transport http {
+                dial_timeout 5s
+                response_header_timeout 15s
+            }
+        }
+    }
+
+    handle {
+        respond 404
+    }
+}

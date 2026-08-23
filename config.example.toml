@@ -1,0 +1,22 @@
+# TAdmin deployment configuration.
+# The bot token is intentionally not stored here. Set TADMIN_BOT_TOKEN in the
+# service environment before starting TAdmin.
+
+# Telegram user ID of the single global TAdmin owner.
+owner_user_id = 123456789
+
+# SQLite creates this file and its parent directory when TAdmin starts.
+database_path = "./data/tadmin.db"
+
+# TAdmin only accepts loopback listeners. Put an HTTPS reverse proxy in front.
+listen_address = "127.0.0.1:8080"
+
+# May remain empty for tests/offline work. /tadmin setup requires absolute HTTPS.
+public_base_url = ""
+
+# Forum-enabled management supergroup required by /tadmin setup. Telegram
+# supergroup IDs are normally negative. Uncomment after replacing the value.
+# management_chat_id = -1001234567890
+
+# Supported values: "zh-CN" and "en".
+default_language = "zh-CN"

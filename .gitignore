@@ -1,0 +1,9 @@
+/dist/
+/bin/
+/data/
+/config.toml
+*.db
+*.db-shm
+*.db-wal
+*.log
+*.exe

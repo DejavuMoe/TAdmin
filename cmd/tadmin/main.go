@@ -1,0 +1,53 @@
+package main
+
+import (
+	"context"
+	"flag"
+	"fmt"
+	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"tadmin/internal/app"
+	"tadmin/internal/config"
+)
+
+func main() {
+	os.Exit(run(os.Args[1:]))
+}
+
+func run(args []string) int {
+	flags := flag.NewFlagSet("tadmin", flag.ContinueOnError)
+	flags.SetOutput(os.Stderr)
+	configPath := flags.String("config", "config.toml", "path to the TOML configuration file")
+	showVersion := flags.Bool("version", false, "print version and exit")
+	if err := flags.Parse(args); err != nil {
+		return 2
+	}
+	if flags.NArg() != 0 {
+		fmt.Fprintln(os.Stderr, "tadmin: unexpected positional arguments")
+		return 2
+	}
+	if *showVersion {
+		fmt.Printf("TAdmin %s\n", app.Version)
+		return 0
+	}
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	slog.SetDefault(logger)
+
+	cfg, err := config.Load(*configPath)
+	if err != nil {
+		logger.Error("configuration error", "error", err)
+		return 1
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	if err := app.Run(ctx, cfg, logger); err != nil {
+		logger.Error("tadmin stopped with an error", "error", err)
+		return 1
+	}
+	return 0
+}

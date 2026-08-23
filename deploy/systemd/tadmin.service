@@ -1,0 +1,32 @@
+[Unit]
+Description=TAdmin Telegram supergroup verification and moderation bot
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=tadmin
+Group=tadmin
+EnvironmentFile=/etc/tadmin/tadmin.env
+WorkingDirectory=/var/lib/tadmin
+StateDirectory=tadmin
+StateDirectoryMode=0700
+ExecStart=/usr/local/bin/tadmin --config /etc/tadmin/config.toml
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=15s
+UMask=0077
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/tadmin
+RestrictSUIDSGID=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target
