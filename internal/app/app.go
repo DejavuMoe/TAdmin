@@ -44,15 +44,16 @@ func Run(parent context.Context, cfg config.Config, logger *slog.Logger) error {
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      10 * time.Second,
 		IdleTimeout:       60 * time.Second,
-		MaxHeaderBytes:    1 << 20,
+		MaxHeaderBytes:    16 << 10,
 		ErrorLog:          log.New(&slogWriter{logger: logger}, "", 0),
 	}
 
 	telegramDone := make(chan struct{})
+	telegramErrors := make(chan error, 1)
 	retentionDone := make(chan struct{})
 	go func() {
 		defer close(telegramDone)
-		telegramClient.Start(runContext)
+		telegramErrors <- telegramClient.Start(runContext)
 	}()
 	go func() {
 		defer close(retentionDone)
@@ -74,6 +75,12 @@ func Run(parent context.Context, cfg config.Config, logger *slog.Logger) error {
 	var runErr error
 	select {
 	case <-parent.Done():
+	case err := <-telegramErrors:
+		if err != nil {
+			runErr = fmt.Errorf("Telegram worker stopped: %w", err)
+		} else if parent.Err() == nil {
+			runErr = errors.New("Telegram worker stopped unexpectedly")
+		}
 	case err := <-serverErrors:
 		if err != nil {
 			runErr = fmt.Errorf("serve HTTP: %w", err)

@@ -7,3 +7,8 @@
 *.db-wal
 *.log
 *.exe
+
+/config.docker.toml
+/tadmin.env
+/.env
+*.db.lock

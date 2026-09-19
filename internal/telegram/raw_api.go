@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 type rawBotAPI struct {
@@ -43,7 +44,7 @@ func (a *rawBotAPI) call(ctx context.Context, method string, params, result any)
 		return fmt.Errorf("decode Telegram %s response: %w", method, err)
 	}
 	if response.StatusCode != http.StatusOK || !envelope.OK {
-		return fmt.Errorf("Telegram %s failed with code %d: %s", method, envelope.ErrorCode, envelope.Description)
+		return fmt.Errorf("Telegram %s failed with code %d: %s", method, envelope.ErrorCode, strings.ReplaceAll(envelope.Description, a.token, "[REDACTED]"))
 	}
 	if result != nil {
 		if err := json.Unmarshal(envelope.Result, result); err != nil {

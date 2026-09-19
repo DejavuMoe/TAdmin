@@ -16,9 +16,9 @@
       tapFirst: "请按提示点击第一个目标。",
       tapSecond: "现在点击第二个目标。",
       retry: "顺序不正确，已更换题目，请重新尝试。",
-      success: "验证成功，可以关闭此窗口。",
-      review: "尝试次数已用完，申请将等待管理员审核。",
-      expired: "验证已过期，请返回 Telegram 重新开始。",
+      success: "验证码已通过，机器人正在恢复发言权限。可以关闭此窗口。",
+      review: "尝试次数已用完，管理员可在原截止时间前审核；超时将自动移除。",
+      expired: "验证已过期，将自动移除。请返回 Telegram，重新入群后再验证。",
       invalid: "无法打开此验证，请从 Telegram 中重新进入。",
       stale: "题目已更新，正在重新载入。",
       imageAlt: "3 × 3 随机交互验证图"
@@ -37,9 +37,9 @@
       tapFirst: "Tap the first target described above.",
       tapSecond: "Now tap the second target.",
       retry: "That order was not correct. A new challenge is ready.",
-      success: "Verification passed. You may close this window.",
-      review: "No attempts remain. Your request will await administrator review.",
-      expired: "Verification expired. Return to Telegram and start again.",
+      success: "CAPTCHA passed. The bot is restoring permissions. You may close this window.",
+      review: "No attempts remain. An administrator may review before the original deadline; expiry removes you.",
+      expired: "Verification expired; removal is pending. Return to Telegram and rejoin to try again.",
       invalid: "This verification cannot be opened. Please re-enter from Telegram.",
       stale: "The challenge changed and is being reloaded.",
       imageAlt: "3 by 3 random interactive verification image"
@@ -69,6 +69,7 @@
     initData: "",
     generation: 0,
     expiresAt: 0,
+    deadline: 0,
     clicks: [],
     busy: false,
     terminal: false,
@@ -88,6 +89,7 @@
     elements.timeLabel.textContent = copy.time;
     elements.attemptLabel.textContent = copy.attempts;
     elements.image.alt = copy.imageAlt;
+    elements.frame.querySelectorAll("button").forEach((button, index) => button.setAttribute("aria-label", state.language === "en" ? `Cell ${index + 1}` : `第 ${index + 1} 格`));
   }
 
   function setStatus(message, kind = "") {
@@ -110,6 +112,8 @@
   function setBusy(value) {
     state.busy = value;
     elements.frame.classList.toggle("busy", value);
+    elements.frame.setAttribute("aria-busy", String(value));
+    elements.frame.querySelectorAll("button").forEach(button => { button.disabled = value || state.terminal; });
     elements.state.textContent = value ? strings().stateSending : strings().stateReady;
   }
 
@@ -126,7 +130,7 @@
 
   function updateClock() {
     if (!state.expiresAt || state.terminal) return;
-    const seconds = Math.max(0, Math.ceil(state.expiresAt - Date.now() / 1000));
+    const seconds = Math.max(0, Math.ceil((state.deadline - performance.now()) / 1000));
     const minutesPart = String(Math.floor(seconds / 60)).padStart(2, "0");
     const secondsPart = String(seconds % 60).padStart(2, "0");
     elements.time.textContent = `${minutesPart}:${secondsPart}`;
@@ -139,7 +143,8 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
       cache: "no-store",
-      credentials: "same-origin"
+      credentials: "same-origin",
+      signal: AbortSignal.timeout(12000)
     });
     let payload = {};
     try {
@@ -156,15 +161,18 @@
     return payload;
   }
 
-  function applyView(view, message) {
+  async function applyView(view, message) {
+    setBusy(true);
     applyLanguage(view.language);
     state.generation = view.generation;
     state.expiresAt = view.expires_at;
+    state.deadline = performance.now() + Math.max(0, view.expires_at - view.server_time) * 1000;
     elements.prompt.textContent = view.prompt;
     elements.attempts.textContent = String(view.remaining_attempts);
     elements.image.src = view.image_url;
     elements.frame.hidden = false;
     resetClicks();
+    await elements.image.decode();
     setBusy(false);
     setStatus(message || strings().tapFirst);
     updateClock();
@@ -174,7 +182,7 @@
   async function openChallenge() {
     try {
       const view = await jsonRequest(`/api/verify/${encodeURIComponent(state.token)}/open`, { init_data: state.initData });
-      applyView(view);
+      await applyView(view);
     } catch (error) {
       if (error.code === "expired") terminal(strings().expired, "error");
       else terminal(strings().invalid, "error");
@@ -199,7 +207,7 @@
       } else if (result.status === "awaiting_review") {
         terminal(strings().review, "");
       } else {
-        applyView(result, strings().retry);
+        await applyView(result, strings().retry);
       }
     } catch (error) {
       if (error.code === "stale_challenge") await reloadAfterStale();
@@ -217,24 +225,27 @@
     elements.markers.append(marker);
   }
 
-  elements.image.addEventListener("pointerup", (event) => {
-    if (state.busy || state.terminal || state.clicks.length >= 2) return;
-    const bounds = elements.image.getBoundingClientRect();
-    if (bounds.width <= 0 || bounds.height <= 0) return;
-    const point = {
-      x: (event.clientX - bounds.left) / bounds.width,
-      y: (event.clientY - bounds.top) / bounds.height
-    };
-    if (point.x < 0 || point.x >= 1 || point.y < 0 || point.y >= 1) return;
-    state.clicks.push(point);
-    addMarker(point, state.clicks.length - 1);
-    if (state.clicks.length === 1) {
-      setStep(2);
-      setStatus(strings().tapSecond);
-    } else {
-      submitClicks();
-    }
-  });
+  const cells = document.createElement("div");
+  cells.className = "captcha-cells";
+  for (let index = 0; index < 9; index++) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.disabled = true;
+    button.addEventListener("click", () => {
+      if (state.busy || state.terminal || state.clicks.length >= 2) return;
+      const point = { x: (index % 3 + 0.5) / 3, y: (Math.floor(index / 3) + 0.5) / 3 };
+      state.clicks.push(point);
+      addMarker(point, state.clicks.length - 1);
+      if (state.clicks.length === 1) {
+        setStep(2);
+        setStatus(strings().tapSecond);
+      } else {
+        submitClicks();
+      }
+    });
+    cells.append(button);
+  }
+  elements.frame.append(cells);
 
   function start() {
     const webApp = window.Telegram && window.Telegram.WebApp;

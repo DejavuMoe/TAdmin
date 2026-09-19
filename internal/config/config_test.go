@@ -8,7 +8,7 @@ import (
 const validConfig = `
 owner_user_id = 123456789
 database_path = "data/tadmin.db"
-public_base_url = "https://verify.example.com/tadmin"
+public_base_url = "https://verify.example.com"
 management_chat_id = -1001234567890
 `
 
@@ -109,5 +109,12 @@ default_language = "en"`), "token")
 	}
 	if cfg.PublicBaseURL != "" {
 		t.Errorf("PublicBaseURL = %q", cfg.PublicBaseURL)
+	}
+}
+
+func TestPublicURLRejectsUnsupportedSubpath(t *testing.T) {
+	_, err := Parse([]byte(strings.Replace(validConfig, "https://verify.example.com", "https://verify.example.com/tadmin", 1)), "synthetic-token")
+	if err == nil {
+		t.Fatal("subpath would break absolute Mini App routes")
 	}
 }

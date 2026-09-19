@@ -42,6 +42,7 @@ type CreateParams struct {
 	SourceRef  string
 	Language   string
 	Lifetime   time.Duration
+	ExpiresAt  time.Time
 }
 
 type View struct {
@@ -109,6 +110,13 @@ func (s *Service) CreateOrGetSession(ctx context.Context, params CreateParams) (
 	if lifetime < 30*time.Second || lifetime > 15*time.Minute {
 		return "", false, ErrInvalidSession
 	}
+	expiresAt := now.Add(lifetime)
+	if !params.ExpiresAt.IsZero() {
+		expiresAt = params.ExpiresAt
+	}
+	if !expiresAt.After(now) || expiresAt.After(now.Add(15*time.Minute)) {
+		return "", false, store.ErrVerificationExpired
+	}
 	token := base64.RawURLEncoding.EncodeToString(tokenBytes)
 	session := store.VerificationSession{
 		ID:              token,
@@ -120,7 +128,7 @@ func (s *Service) CreateOrGetSession(ctx context.Context, params CreateParams) (
 		Status:          store.VerificationChallengeIssued,
 		Generation:      1,
 		ChallengeSecret: secret,
-		ExpiresAt:       now.Add(lifetime),
+		ExpiresAt:       expiresAt,
 		CreatedAt:       now,
 		UpdatedAt:       now,
 	}
@@ -241,13 +249,16 @@ func (s *Service) validateIdentity(raw string) (InitData, error) {
 }
 
 func validateSessionIdentity(session store.VerificationSession, token string, identity InitData) error {
+	if identity.ChatID != 0 && identity.ChatID != session.ChatID {
+		return ErrSessionIdentity
+	}
+	if session.SourceKind == SourceGuardQuery && identity.GuardQueryID != session.SourceRef {
+		return ErrSessionIdentity
+	}
 	if identity.UserID != session.UserID {
 		return ErrSessionIdentity
 	}
 	if identity.StartParam != "" && identity.StartParam != token && identity.StartParam != "verify_"+token {
-		return ErrSessionIdentity
-	}
-	if session.SourceKind == SourceGuardQuery && identity.QueryID != "" && identity.QueryID != session.SourceRef {
 		return ErrSessionIdentity
 	}
 	return nil

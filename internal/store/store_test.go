@@ -29,8 +29,8 @@ func TestMigrationsAreIdempotentAndConfigureSQLite(t *testing.T) {
 	if err := s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM schema_migrations").Scan(&migrationCount); err != nil {
 		t.Fatalf("query schema_migrations: %v", err)
 	}
-	if migrationCount != 5 {
-		t.Errorf("migration count = %d, want 5", migrationCount)
+	if migrationCount != 6 {
+		t.Errorf("migration count = %d, want 6", migrationCount)
 	}
 
 	var challengeColumnCount int
@@ -142,14 +142,14 @@ func TestMigration0003UpgradesStage2Database(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if chat.VerificationTimeoutSeconds != 180 || chat.ReentryTrustSeconds != 30*24*60*60 {
+	if chat.VerificationTimeoutSeconds != 180 || chat.ReentryTrustSeconds != 0 {
 		t.Fatalf("stage 3 defaults = %+v", chat)
 	}
 	var count int
 	if err := upgraded.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM schema_migrations`).Scan(&count); err != nil {
 		t.Fatal(err)
 	}
-	if count != 5 {
+	if count != 6 {
 		t.Fatalf("migration count = %d", count)
 	}
 }
@@ -200,8 +200,8 @@ func TestMigration0004UpgradesStage3Database(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !chat.ModerationEnabled {
-		t.Fatalf("moderation default disabled: %+v", chat)
+	if chat.ModerationEnabled {
+		t.Fatalf("moderation unexpectedly enabled: %+v", chat)
 	}
 	var migrationCount, legacyCount, raidStateCount int
 	if err := upgraded.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM schema_migrations`).Scan(&migrationCount); err != nil {
@@ -213,7 +213,7 @@ func TestMigration0004UpgradesStage3Database(t *testing.T) {
 	if err := upgraded.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM raid_states WHERE chat_id = -1001 AND mode = 'auto'`).Scan(&raidStateCount); err != nil {
 		t.Fatal(err)
 	}
-	if migrationCount != 5 || legacyCount != 1 || raidStateCount != 1 {
+	if migrationCount != 6 || legacyCount != 1 || raidStateCount != 1 {
 		t.Fatalf("migration=%d legacy=%d raid=%d", migrationCount, legacyCount, raidStateCount)
 	}
 }
@@ -270,7 +270,7 @@ func TestMigration0005UpgradesStage4Database(t *testing.T) {
 	if err := upgraded.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM managed_chats WHERE chat_id = -1001`).Scan(&chatCount); err != nil {
 		t.Fatal(err)
 	}
-	if migrationCount != 5 || inviteTable != 1 || chatCount != 1 {
+	if migrationCount != 6 || inviteTable != 1 || chatCount != 1 {
 		t.Fatalf("migration=%d invite_table=%d chat=%d", migrationCount, inviteTable, chatCount)
 	}
 }

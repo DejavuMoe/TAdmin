@@ -39,8 +39,13 @@ func decodeExtendedUpdate(data []byte) (extendedUpdate, error) {
 	return result, nil
 }
 
-func (c *Client) poll(ctx context.Context) {
-	var offset int64
+func (c *Client) poll(ctx context.Context, caughtUp chan<- struct{}) error {
+	bootstrapped := false
+	offset, err := c.database.PollOffset(ctx)
+	if err != nil {
+		c.logger.Error("read polling offset", "error", err)
+		return err
+	}
 	var retry time.Duration
 	for {
 		if retry > 0 {
@@ -48,53 +53,75 @@ func (c *Client) poll(ctx context.Context) {
 			select {
 			case <-ctx.Done():
 				timer.Stop()
-				return
+				return nil
 			case <-timer.C:
 			}
+		}
+		timeout := 59
+		if !bootstrapped {
+			timeout = 0
 		}
 		var rawUpdates []json.RawMessage
 		err := c.raw.call(ctx, "getUpdates", struct {
 			Offset         int64    `json:"offset,omitempty"`
 			Timeout        int      `json:"timeout"`
 			AllowedUpdates []string `json:"allowed_updates"`
-		}{Offset: offset, Timeout: 59, AllowedUpdates: []string(allowedUpdates)}, &rawUpdates)
+		}{Offset: offset, Timeout: timeout, AllowedUpdates: []string(allowedUpdates)}, &rawUpdates)
 		if err != nil {
 			if errors.Is(err, context.Canceled) || ctx.Err() != nil {
-				return
+				return nil
 			}
 			c.logger.Error("telegram polling error", "error", sanitizeError(err, c.token))
 			retry = nextRetry(retry)
 			continue
 		}
 		retry = 0
+		processedAll := true
 		for _, raw := range rawUpdates {
 			update, err := decodeExtendedUpdate(raw)
 			if err != nil {
-				c.logger.Error("telegram update decode failed", "error", err)
-				continue
+				c.logger.Error("telegram update decode failed; batch retained for retry")
+				retry = time.Second
+				processedAll = false
+				break
 			}
 			if err := c.handleExtendedUpdate(ctx, update); err != nil {
 				c.logger.Error("telegram update handling failed", "update_id", update.Update.ID, "error", sanitizeError(err, c.token))
 				retry = time.Second
+				processedAll = false
 				break
 			}
-			if update.Update.ID >= offset {
-				offset = update.Update.ID + 1
+			next := update.Update.ID + 1
+			if err := c.database.SavePollOffset(ctx, next); err != nil {
+				c.logger.Error("save polling offset", "error", err)
+				retry = time.Second
+				processedAll = false
+				break
 			}
+			offset = next
+		}
+		if !bootstrapped && processedAll && len(rawUpdates) < 100 {
+			close(caughtUp)
+			bootstrapped = true
 		}
 	}
 }
 
 func (c *Client) handleExtendedUpdate(ctx context.Context, envelope extendedUpdate) error {
 	update := envelope.Update
-	if update.Message != nil {
-		if err := c.moderation.HandleMessage(ctx, update.ID, update.Message, false); err != nil {
-			return err
-		}
+	if update == nil {
+		return nil
 	}
-	if update.EditedMessage != nil {
-		if err := c.moderation.HandleMessage(ctx, update.ID, update.EditedMessage, true); err != nil {
-			return err
+	if update.Message != nil && update.Message.MigrateToChatID != 0 && c.database != nil {
+		return c.database.PauseManagedChat(ctx, update.Message.Chat.ID, "chat_migrated", time.Now())
+	}
+	if update.MyChatMember != nil && c.database != nil {
+		change := update.MyChatMember
+		permissions := inspectPermissions(&change.NewChatMember)
+		if !permissions.administrator || !permissions.canRestrictMembers || !permissions.canInviteUsers {
+			if err := c.database.PauseManagedChat(ctx, change.Chat.ID, "bot_permissions_changed", time.Now()); err != nil {
+				return err
+			}
 		}
 	}
 	if update.ChatJoinRequest != nil {
@@ -119,11 +146,21 @@ func (c *Client) handleExtendedUpdate(ctx context.Context, envelope extendedUpda
 			user = memberUser(change.OldChatMember)
 		}
 		if user != nil {
+			prior, until := "", int64(0)
+			if change.NewChatMember.Restricted != nil && change.NewChatMember.Restricted.IsMember {
+				encoded, _ := json.Marshal(change.NewChatMember.Restricted)
+				var permissions models.ChatPermissions
+				if err := json.Unmarshal(encoded, &permissions); err != nil {
+					return err
+				}
+				encoded, _ = json.Marshal(permissionMap(&permissions))
+				prior, until = string(encoded), int64(change.NewChatMember.Restricted.UntilDate)
+			}
 			err := c.coordinator.HandleMemberUpdate(ctx, join.MemberUpdate{
 				UpdateID: update.ID, ChatID: change.Chat.ID, ChatTitle: change.Chat.Title,
 				Applicant: join.Applicant{ID: user.ID, IsBot: user.IsBot, FirstName: user.FirstName, LastName: user.LastName, Username: user.Username, Language: user.LanguageCode},
-				OldStatus: change.OldChatMember.Type, NewStatus: change.NewChatMember.Type,
-				JoinedAtUnix: int64(change.Date), InviteSource: inviteSource(change.InviteLink),
+				OldStatus: membershipStatus(change.OldChatMember), NewStatus: membershipStatus(change.NewChatMember),
+				PriorPermissions: prior, PriorUntil: until, JoinedAtUnix: int64(change.Date), InviteSource: inviteSource(change.InviteLink),
 			})
 			if err != nil {
 				return err
@@ -145,7 +182,9 @@ func (c *Client) handleExtendedUpdate(ctx context.Context, envelope extendedUpda
 			}
 		}
 	}
-	c.bot.ProcessUpdate(ctx, update)
+	if c.handler != nil {
+		c.handler.handle(ctx, c.bot, update)
+	}
 	return nil
 }
 
@@ -212,4 +251,12 @@ func memberUser(member models.ChatMember) *models.User {
 		}
 	}
 	return nil
+}
+
+// Restricted users may be outside the group. Normalize before lifecycle detection.
+func membershipStatus(member models.ChatMember) models.ChatMemberType {
+	if member.Type == models.ChatMemberTypeRestricted && (member.Restricted == nil || !member.Restricted.IsMember) {
+		return models.ChatMemberTypeLeft
+	}
+	return member.Type
 }

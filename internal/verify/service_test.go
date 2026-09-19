@@ -25,12 +25,13 @@ func TestOpenRejectsUserAndSourceMismatch(t *testing.T) {
 	}
 
 	guardToken := createTestSession(t, service, 424242, SourceGuardQuery, "expected-query")
-	_, err = service.Open(context.Background(), guardToken, testInitData(t, now, 424242, guardToken, "other-query"))
-	if !errors.Is(err, ErrSessionIdentity) {
-		t.Fatalf("Open(other query) error = %v, want ErrSessionIdentity", err)
+	guardData := url.Values{"auth_date": {strconv.FormatInt(now.Unix(), 10)}, "user": {`{"id":424242}`}, "query_id": {"web-app-session"}, "chat_join_request_query_id": {"expected-query"}}
+	if _, err := service.Open(context.Background(), guardToken, signTestInitData(t, guardData)); err != nil {
+		t.Fatal(err)
 	}
-	if _, err := service.Open(context.Background(), guardToken, testInitData(t, now, 424242, guardToken, "")); err != nil {
-		t.Fatalf("Open(without optional query_id) error = %v", err)
+	guardData.Set("chat_join_request_query_id", "wrong-query")
+	if _, err := service.Open(context.Background(), guardToken, signTestInitData(t, guardData)); !errors.Is(err, ErrSessionIdentity) {
+		t.Fatalf("wrong guard identity: %v", err)
 	}
 
 	view, err := service.Open(context.Background(), token, testInitData(t, now, 424242, token, ""))

@@ -131,6 +131,9 @@ func validatePublicBaseURL(value string) error {
 	if parsed.User != nil {
 		return errors.New("public_base_url must not contain credentials")
 	}
+	if parsed.Path != "" && parsed.Path != "/" {
+		return errors.New("public_base_url must be an HTTPS origin without a path")
+	}
 	if parsed.RawQuery != "" || parsed.Fragment != "" {
 		return errors.New("public_base_url must not contain a query string or fragment")
 	}

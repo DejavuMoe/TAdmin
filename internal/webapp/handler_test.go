@@ -1,6 +1,7 @@
 package webapp
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -236,4 +237,23 @@ func mustJSON(t *testing.T, value string) string {
 		t.Fatal(err)
 	}
 	return string(encoded)
+}
+
+func TestImageCancellationWhileRendererBusy(t *testing.T) {
+	handler, _, token, _ := newTestHandler(t)
+	handler.imageSlots <- struct{}{}
+	handler.imageSlots <- struct{}{}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	request := httptest.NewRequest(http.MethodGet, "/api/verify/"+token+"/image/1.png", nil).WithContext(ctx)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status=%d", response.Code)
+	}
+	<-handler.imageSlots
+	<-handler.imageSlots
+	if next := performRequest(handler, http.MethodGet, "/api/verify/"+token+"/image/1.png", "", ""); next.Code != http.StatusOK {
+		t.Fatal("renderer did not recover")
+	}
 }

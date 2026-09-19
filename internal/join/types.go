@@ -29,8 +29,9 @@ const (
 )
 
 var (
-	ErrStartInvalid  = errors.New("verification link is invalid or expired")
-	ErrStartIdentity = errors.New("verification link belongs to another user")
+	ErrRequestHandled = errors.New("join request was already handled externally")
+	ErrStartInvalid   = errors.New("verification link is invalid or expired")
+	ErrStartIdentity  = errors.New("verification link belongs to another user")
 )
 
 type Applicant struct {
@@ -53,14 +54,16 @@ type JoinRequest struct {
 }
 
 type MemberUpdate struct {
-	UpdateID     int64
-	ChatID       int64
-	ChatTitle    string
-	Applicant    Applicant
-	OldStatus    models.ChatMemberType
-	NewStatus    models.ChatMemberType
-	JoinedAtUnix int64
-	InviteSource string
+	UpdateID         int64
+	ChatID           int64
+	ChatTitle        string
+	Applicant        Applicant
+	OldStatus        models.ChatMemberType
+	NewStatus        models.ChatMemberType
+	JoinedAtUnix     int64
+	PriorPermissions string
+	PriorUntil       int64
+	InviteSource     string
 }
 
 type ReviewCallback struct {
@@ -90,9 +93,11 @@ type Telegram interface {
 	DeclineJoinRequest(context.Context, int64, int64) error
 	RestrictMember(context.Context, int64, int64) error
 	RestoreDefaultPermissions(context.Context, int64, int64) error
+	RestorePriorPermissions(context.Context, int64, int64, string, int64) error
 	KickMember(context.Context, int64, int64) error
 	BanMember(context.Context, int64, int64) error
 	IsAdministrator(context.Context, int64, int64) (bool, error)
+	MemberStatus(context.Context, int64, int64) (models.ChatMemberType, error)
 	SendReviewCard(context.Context, int64, int, string, []ReviewButton) (int, error)
 	EditReviewCard(context.Context, int64, int, string) error
 	AnswerCallback(context.Context, string, string, bool) error

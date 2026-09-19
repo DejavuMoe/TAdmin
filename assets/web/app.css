@@ -204,3 +204,8 @@ h1 {
     transition: opacity 120ms ease;
   }
 }
+
+.captcha-cells { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
+.captcha-cells button { appearance: none; border: 0; border-radius: 0; background: transparent; cursor: pointer; padding: 0; }
+.captcha-cells button:focus-visible { outline: 3px solid var(--accent); outline-offset: -4px; }
+.tap-markers { position: absolute; inset: 0; pointer-events: none; z-index: 1; }

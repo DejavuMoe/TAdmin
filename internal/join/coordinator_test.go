@@ -125,7 +125,7 @@ func newJoinFixture(t *testing.T) *joinFixture {
 	t.Cleanup(func() { _ = database.Close() })
 	now := time.Now().UTC().Truncate(time.Second)
 	chat := store.ManagedChat{
-		ChatID: -1001, Title: "Source", Enabled: true, Language: "en", ManagementTopicID: 77,
+		ChatID: -1001, Title: "Source", Enabled: true, Language: "en", ManagementTopicID: 0, ManagementChatID: -2001,
 		VerificationTimeoutSeconds: 180, ReentryTrustSeconds: 30 * 24 * 60 * 60,
 	}
 	if err := database.SaveManagedChatSetup(ctx, chat, now); err != nil {
@@ -164,7 +164,7 @@ func TestGuardOpensBeforeApprovalAndCompletesOnce(t *testing.T) {
 	}
 	item := mustCase(t, f, store.JoinPathGuard, request.ChatID, request.QueryID)
 	passSession(t, f, item.VerificationSessionID)
-	f.joins.reconcile(f.ctx)
+	f.joins.reconcileAll(f.ctx)
 	if f.telegram.count("guard_approve") != 1 {
 		t.Fatalf("Guard approvals = %d", f.telegram.count("guard_approve"))
 	}
@@ -175,7 +175,7 @@ func TestGuardOpensBeforeApprovalAndCompletesOnce(t *testing.T) {
 	if err := f.joins.HandleJoinRequest(f.ctx, request); err != nil {
 		t.Fatal(err)
 	}
-	f.joins.reconcile(f.ctx)
+	f.joins.reconcileAll(f.ctx)
 	if f.telegram.count(ActionGuardOpen) != 1 || f.telegram.count("guard_approve") != 1 {
 		t.Fatalf("duplicate update calls = %v", f.telegram.calls)
 	}
@@ -213,7 +213,7 @@ func TestGuardInitializationFailureQueuesAndCreatesOneReview(t *testing.T) {
 	if item.Status != store.JoinReviewPending || f.telegram.count("guard_queue") != 1 {
 		t.Fatalf("case = %+v, calls = %v", item, f.telegram.calls)
 	}
-	f.joins.reconcile(f.ctx)
+	f.joins.reconcileAll(f.ctx)
 	review, err := f.database.GetReviewByCase(f.ctx, item.ID)
 	if err != nil || review.Reason != ReasonUnreachable || f.telegram.count("review_send") != 1 {
 		t.Fatalf("review = %+v, err = %v, calls = %v", review, err, f.telegram.calls)
@@ -221,7 +221,7 @@ func TestGuardInitializationFailureQueuesAndCreatesOneReview(t *testing.T) {
 	if err := f.joins.HandleJoinRequest(f.ctx, request); err != nil {
 		t.Fatal(err)
 	}
-	f.joins.reconcile(f.ctx)
+	f.joins.reconcileAll(f.ctx)
 	if f.telegram.count("review_send") != 1 {
 		t.Fatalf("duplicate review cards = %d", f.telegram.count("review_send"))
 	}
@@ -252,7 +252,7 @@ func TestOrdinaryJoinUsesUserChatAndPassesOrReviews(t *testing.T) {
 	}
 	item := mustCase(t, f, store.JoinPathRequest, request.ChatID, "20")
 	passSession(t, f, item.VerificationSessionID)
-	f.joins.reconcile(f.ctx)
+	f.joins.reconcileAll(f.ctx)
 	if f.telegram.count(ActionApprove) != 1 {
 		t.Fatalf("approve calls = %v", f.telegram.calls)
 	}
@@ -282,7 +282,7 @@ func TestDirectJoinRestrictsThenRestoresAndCancelsOnLeave(t *testing.T) {
 	}
 	item := mustCase(t, f, store.JoinPathDirect, update.ChatID, "30")
 	passSession(t, f, item.VerificationSessionID)
-	f.joins.reconcile(f.ctx)
+	f.joins.reconcileAll(f.ctx)
 	if f.telegram.count(ActionRestore) != 1 {
 		t.Fatalf("restore calls = %v", f.telegram.calls)
 	}
@@ -312,7 +312,7 @@ func TestTrustedUserSkipsNewChallenge(t *testing.T) {
 	}
 	item := mustCase(t, f, store.JoinPathRequest, first.ChatID, "40")
 	passSession(t, f, item.VerificationSessionID)
-	f.joins.reconcile(f.ctx)
+	f.joins.reconcileAll(f.ctx)
 	second := ordinaryRequest(41, 70, 900070)
 	if err := f.joins.HandleJoinRequest(f.ctx, second); err != nil {
 		t.Fatal(err)
@@ -339,14 +339,14 @@ func TestTerminalRecoveryScansFailedAndExpiredSessions(t *testing.T) {
 	expired := mustCase(t, f, store.JoinPathRequest, expiredRequest.ChatID, "51")
 	f.now = f.now.Add(4 * time.Minute)
 	f.joins.now = func() time.Time { return f.now }
-	f.joins.reconcile(f.ctx)
+	f.joins.reconcileAll(f.ctx)
 
 	failedReview, err := f.database.GetReviewByCase(f.ctx, failed.ID)
 	if err != nil || failedReview.Reason != ReasonFailed {
 		t.Fatalf("failed review = %+v, err = %v", failedReview, err)
 	}
 	expiredReview, err := f.database.GetReviewByCase(f.ctx, expired.ID)
-	if err != nil || expiredReview.Reason != ReasonExpired {
+	if err != nil || expiredReview.Decision != ActionDecline {
 		t.Fatalf("expired review = %+v, err = %v", expiredReview, err)
 	}
 }
@@ -358,7 +358,7 @@ func TestReviewAuthorizationConcurrencyAndTrustChoice(t *testing.T) {
 	if err := f.joins.HandleJoinRequest(f.ctx, request); err != nil {
 		t.Fatal(err)
 	}
-	f.joins.reconcile(f.ctx)
+	f.joins.reconcileAll(f.ctx)
 	item := mustCase(t, f, store.JoinPathRequest, request.ChatID, "60")
 	review, err := f.database.GetReviewByCase(f.ctx, item.ID)
 	if err != nil {
@@ -385,7 +385,7 @@ func TestReviewAuthorizationConcurrencyAndTrustChoice(t *testing.T) {
 	if f.telegram.count(ActionApprove) != 1 {
 		t.Fatalf("concurrent approve calls = %d, calls = %v", f.telegram.count(ActionApprove), f.telegram.calls)
 	}
-	f.joins.reconcile(f.ctx)
+	f.joins.reconcileAll(f.ctx)
 	if f.telegram.count("review_edit") != 1 {
 		t.Fatalf("final review edits = %v", f.telegram.calls)
 	}
@@ -399,7 +399,7 @@ func TestReviewAuthorizationConcurrencyAndTrustChoice(t *testing.T) {
 	if err := f.joins.HandleJoinRequest(f.ctx, request2); err != nil {
 		t.Fatal(err)
 	}
-	f.joins.reconcile(f.ctx)
+	f.joins.reconcileAll(f.ctx)
 	item2 := mustCase(t, f, store.JoinPathRequest, request2.ChatID, "61")
 	review2, _ := f.database.GetReviewByCase(f.ctx, item2.ID)
 	callback = ReviewCallback{ID: "cb2", ActorUserID: 1, ManagementChat: -2001, MessageThreadID: 77, MessageID: review2.ManagementMessageID, Data: "ta:r:" + review2.PublicID + ":t"}
@@ -419,7 +419,7 @@ func TestCurrentAdministratorCanReviewAndAnonymousIdentityCannot(t *testing.T) {
 	if err := f.joins.HandleJoinRequest(f.ctx, request); err != nil {
 		t.Fatal(err)
 	}
-	f.joins.reconcile(f.ctx)
+	f.joins.reconcileAll(f.ctx)
 	item := mustCase(t, f, store.JoinPathRequest, request.ChatID, "65")
 	review, _ := f.database.GetReviewByCase(f.ctx, item.ID)
 	data := "ta:r:" + review.PublicID + ":d"
@@ -456,10 +456,10 @@ func TestReviewTimeoutsAndDirectDeclineVersusBan(t *testing.T) {
 	if err := f.joins.HandleMemberUpdate(f.ctx, directUpdate(72, 102)); err != nil {
 		t.Fatal(err)
 	}
-	f.joins.reconcile(f.ctx)
+	f.joins.reconcileAll(f.ctx)
 	f.now = f.now.Add(31 * time.Minute)
 	f.joins.now = func() time.Time { return f.now }
-	f.joins.reconcile(f.ctx)
+	f.joins.reconcileAll(f.ctx)
 	if f.telegram.count(ActionDecline) != 2 || f.telegram.count(ActionKick) != 1 {
 		t.Fatalf("timeout actions = %v", f.telegram.calls)
 	}
@@ -470,7 +470,7 @@ func TestReviewTimeoutsAndDirectDeclineVersusBan(t *testing.T) {
 	if err := f.joins.HandleMemberUpdate(f.ctx, update); err != nil {
 		t.Fatal(err)
 	}
-	f.joins.reconcile(f.ctx)
+	f.joins.reconcileAll(f.ctx)
 	item := mustCase(t, f, store.JoinPathDirect, update.ChatID, "73")
 	review, _ := f.database.GetReviewByCase(f.ctx, item.ID)
 	callback := ReviewCallback{ID: "ban", ActorUserID: 1, ManagementChat: -2001, MessageThreadID: 77, MessageID: review.ManagementMessageID, Data: "ta:r:" + review.PublicID + ":b"}
@@ -515,7 +515,7 @@ func TestReviewTextAndPersistedMetadataDoNotContainSecrets(t *testing.T) {
 	if err := f.joins.HandleJoinRequest(f.ctx, guardRequest(90, 120, queryID)); err != nil {
 		t.Fatal(err)
 	}
-	f.joins.reconcile(f.ctx)
+	f.joins.reconcileAll(f.ctx)
 	f.telegram.mu.Lock()
 	text := f.telegram.lastText
 	f.telegram.mu.Unlock()
@@ -582,4 +582,24 @@ func failSession(t *testing.T, f *joinFixture, token string) {
 
 func intString(value int64) string {
 	return strconv.FormatInt(value, 10)
+}
+
+func (f *fakeTelegram) MemberStatus(_ context.Context, _ int64, userID int64) (models.ChatMemberType, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.admins[userID] {
+		return models.ChatMemberTypeAdministrator, f.fail["administrator"]
+	}
+	return models.ChatMemberTypeMember, f.fail["administrator"]
+}
+
+func (c *Coordinator) reconcileAll(ctx context.Context) {
+	c.reconcile(ctx)
+	if err := c.reconcileReviewCards(ctx); err != nil {
+		c.logError("test reconcile cards", 0, err)
+	}
+}
+
+func (f *fakeTelegram) RestorePriorPermissions(context.Context, int64, int64, string, int64) error {
+	return f.record("restore_prior")
 }

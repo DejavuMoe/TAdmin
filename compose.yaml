@@ -1,0 +1,31 @@
+services:
+  tadmin:
+    build:
+      context: .
+      args:
+        VERSION: v0.1.0-rc.1
+    image: tadmin:v0.1.0-rc.1
+    restart: unless-stopped
+    # Linux host networking keeps the same loopback-only backend as systemd.
+    # Nginx runs on the host. Do not add ports or bind the app to 0.0.0.0.
+    network_mode: host
+    env_file:
+      - path: ./tadmin.env
+        format: raw
+    volumes:
+      - ./config.docker.toml:/etc/tadmin/config.toml:ro
+      - tadmin-data:/var/lib/tadmin
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 256m
+    cpus: 1.0
+    stop_grace_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+volumes:
+  tadmin-data:

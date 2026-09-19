@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-telegram/bot/models"
@@ -19,10 +20,9 @@ import (
 )
 
 const (
-	defaultReviewLifetime = 30 * time.Minute
-	recentApprovalWindow  = 10 * time.Minute
-	actionRetryAge        = 15 * time.Second
-	coordinatorInterval   = 2 * time.Second
+	recentApprovalWindow = 10 * time.Minute
+	actionRetryAge       = 15 * time.Second
+	coordinatorInterval  = 2 * time.Second
 )
 
 type Options struct {
@@ -33,6 +33,8 @@ type Options struct {
 }
 
 type Coordinator struct {
+	// ponytail: 64 lock stripes bound memory; use per-member locks if collisions limit throughput.
+	workflowMu   [64]sync.Mutex
 	database     *store.Store
 	verification *verify.Service
 	telegram     Telegram
@@ -70,6 +72,23 @@ func (c *Coordinator) Run(ctx context.Context) {
 	if c == nil || c.database == nil || c.verification == nil || c.telegram == nil {
 		return
 	}
+	cardsDone := make(chan struct{})
+	go func() {
+		defer close(cardsDone)
+		ticker := time.NewTicker(coordinatorInterval)
+		defer ticker.Stop()
+		for {
+			if err := c.reconcileReviewCards(ctx); err != nil && ctx.Err() == nil {
+				c.logError("reconcile review cards", 0, err)
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	}()
+	defer func() { <-cardsDone }()
 	ticker := time.NewTicker(coordinatorInterval)
 	defer ticker.Stop()
 	c.reconcile(ctx)
@@ -86,6 +105,9 @@ func (c *Coordinator) Run(ctx context.Context) {
 }
 
 func (c *Coordinator) HandleJoinRequest(ctx context.Context, request JoinRequest) error {
+	unlock := c.lockMember(request.Applicant.ID)
+	defer unlock()
+
 	chat, err := c.database.GetManagedChat(ctx, request.ChatID)
 	if errors.Is(err, store.ErrManagedChatNotFound) || (err == nil && !chat.Enabled) {
 		return nil
@@ -139,6 +161,9 @@ func (c *Coordinator) HandleJoinRequest(ctx context.Context, request JoinRequest
 }
 
 func (c *Coordinator) HandleMemberUpdate(ctx context.Context, update MemberUpdate) error {
+	unlock := c.lockMember(update.Applicant.ID)
+	defer unlock()
+
 	if leavingMembership(update.OldStatus, update.NewStatus) {
 		return c.database.CancelDirectJoin(ctx, update.ChatID, update.Applicant.ID, c.currentTime())
 	}
@@ -158,7 +183,7 @@ func (c *Coordinator) HandleMemberUpdate(ctx context.Context, update MemberUpdat
 	if err != nil {
 		return err
 	}
-	if administrator {
+	if administrator || update.Applicant.ID == c.options.OwnerUserID {
 		return nil
 	}
 	blocked, err := c.database.IsBlocked(ctx, update.ChatID, update.Applicant.ID)
@@ -172,17 +197,18 @@ func (c *Coordinator) HandleMemberUpdate(ctx context.Context, update MemberUpdat
 	}
 	sourceRef := strconv.FormatInt(update.UpdateID, 10)
 	item := store.JoinCase{
-		SourceKey:     sourceKey(store.JoinPathDirect, update.ChatID, sourceRef),
-		UpdateID:      update.UpdateID,
-		Path:          store.JoinPathDirect,
-		ChatID:        update.ChatID,
-		UserID:        update.Applicant.ID,
-		SourceRef:     sourceRef,
-		InviteSource:  cleanInviteSource(update.InviteSource),
-		UserFirstName: cleanLabel(update.Applicant.FirstName, 64),
-		UserLastName:  cleanLabel(update.Applicant.LastName, 64),
-		Username:      cleanUsername(update.Applicant.Username),
-		JoinedAt:      &joinedAt,
+		SourceKey:        sourceKey(store.JoinPathDirect, update.ChatID, sourceRef),
+		UpdateID:         update.UpdateID,
+		Path:             store.JoinPathDirect,
+		ChatID:           update.ChatID,
+		UserID:           update.Applicant.ID,
+		SourceRef:        sourceRef,
+		InviteSource:     cleanInviteSource(update.InviteSource),
+		UserFirstName:    cleanLabel(update.Applicant.FirstName, 64),
+		UserLastName:     cleanLabel(update.Applicant.LastName, 64),
+		Username:         cleanUsername(update.Applicant.Username),
+		JoinedAt:         &joinedAt,
+		PriorPermissions: update.PriorPermissions, PriorUntil: update.PriorUntil,
 	}
 	if blocked {
 		item.Reason = store.RuleBlocklist
@@ -224,6 +250,7 @@ func (c *Coordinator) HandlePrivateStart(ctx context.Context, privateChatID, use
 }
 
 func (c *Coordinator) HandleReviewCallback(ctx context.Context, callback ReviewCallback) error {
+
 	publicID, decision, ok := parseCallbackData(callback.Data)
 	if !ok {
 		return nil
@@ -242,6 +269,8 @@ func (c *Coordinator) HandleReviewCallback(ctx context.Context, callback ReviewC
 	if err != nil {
 		return err
 	}
+	unlock := c.lockMember(item.UserID)
+	defer unlock()
 	chat, err := c.database.GetManagedChat(ctx, item.ChatID)
 	if err != nil {
 		return err
@@ -249,9 +278,15 @@ func (c *Coordinator) HandleReviewCallback(ctx context.Context, callback ReviewC
 	if callback.Anonymous || callback.ActorUserID <= 0 {
 		return deny(callbackMessage(chat.Language, "identity"))
 	}
-	if callback.ManagementChat != c.options.ManagementChatID || callback.MessageThreadID != review.ManagementTopicID ||
-		(review.ManagementMessageID != 0 && callback.MessageID != review.ManagementMessageID) {
+	if review.ManagementChatID == 0 || callback.ManagementChat != review.ManagementChatID ||
+		review.ManagementMessageID == 0 || callback.MessageID != review.ManagementMessageID {
 		return deny(callbackMessage(chat.Language, "location"))
+	}
+	if !chat.Enabled {
+		return deny(callbackMessage(chat.Language, "processed"))
+	}
+	if decision == store.ReviewDecisionTrust && chat.ReentryTrustSeconds == 0 {
+		return deny(callbackMessage(chat.Language, "disabled"))
 	}
 	authorized := callback.ActorUserID == c.options.OwnerUserID
 	if !authorized {
@@ -293,6 +328,12 @@ func (c *Coordinator) initializeCase(ctx context.Context, initial store.JoinCase
 		return err
 	}
 	now := c.currentTime()
+	if item.ActionKind == ActionRecordMember {
+		return c.processAction(ctx, item.ID)
+	}
+	if !now.Before(item.DeadlineAt) {
+		return c.expireCase(ctx, item)
+	}
 	if item.Reason == store.RuleBlocklist {
 		if item.ActionKind != ActionBan || item.ActionState == store.ActionNone {
 			if err := c.database.ScheduleCaseAction(ctx, item.ID, ActionBan, now); err != nil {
@@ -305,7 +346,7 @@ func (c *Coordinator) initializeCase(ctx context.Context, initial store.JoinCase
 	if err != nil {
 		return err
 	}
-	if trusted {
+	if trusted && chat.ReentryTrustSeconds > 0 {
 		action := ActionApprove
 		if item.Path == store.JoinPathGuard {
 			action = ActionGuardApprove
@@ -322,14 +363,11 @@ func (c *Coordinator) initializeCase(ctx context.Context, initial store.JoinCase
 		}
 	}
 	if item.Path == store.JoinPathDirect {
-		handled, err := c.database.HasResolvedApplication(ctx, item.ChatID, item.UserID, now.Add(-recentApprovalWindow))
+		handled, err := c.database.UseResolvedApplication(ctx, item.ID, now.Add(-recentApprovalWindow), now)
 		if err != nil {
 			return err
 		}
 		if handled {
-			if err := c.database.ScheduleCaseAction(ctx, item.ID, ActionRecordMember, now); err != nil {
-				return err
-			}
 			if err := c.processAction(ctx, item.ID); errors.Is(err, store.ErrActionUnavailable) {
 				return nil
 			} else {
@@ -363,7 +401,7 @@ func (c *Coordinator) initializeCase(ctx context.Context, initial store.JoinCase
 		token, _, err := c.verification.CreateOrGetSession(ctx, verify.CreateParams{
 			ChatID: item.ChatID, UserID: item.UserID, SourceKind: sourceKind,
 			SourceRef: item.SourceRef, Language: chat.Language,
-			Lifetime: time.Duration(chat.VerificationTimeoutSeconds) * time.Second,
+			Lifetime: time.Duration(chat.VerificationTimeoutSeconds) * time.Second, ExpiresAt: item.DeadlineAt,
 		})
 		if err != nil {
 			return c.failInitialization(ctx, item, err)
@@ -417,6 +455,7 @@ func (c *Coordinator) failInitialization(ctx context.Context, item store.JoinCas
 }
 
 func (c *Coordinator) reconcile(ctx context.Context) {
+
 	now := c.currentTime()
 	if _, err := c.database.ExpireDueVerificationSessions(ctx, now); err != nil {
 		c.logError("expire verification sessions", 0, err)
@@ -427,7 +466,10 @@ func (c *Coordinator) reconcile(ctx context.Context) {
 		c.logError("claim expired reviews", 0, err)
 	} else {
 		for _, claim := range claims {
-			if err := c.processAction(ctx, claim.Case.ID); err != nil && !errors.Is(err, store.ErrActionUnavailable) {
+			unlock := c.lockMember(claim.Case.UserID)
+			err := c.processAction(ctx, claim.Case.ID)
+			unlock()
+			if err != nil && !errors.Is(err, store.ErrActionUnavailable) {
 				c.logError("execute review timeout", claim.Case.ID, err)
 			}
 		}
@@ -443,28 +485,10 @@ func (c *Coordinator) reconcile(ctx context.Context) {
 			return
 		default:
 		}
-		chat, err := c.database.GetManagedChat(ctx, item.ChatID)
-		if err != nil || !chat.Enabled {
-			continue
-		}
-		switch item.Status {
-		case store.JoinInitializing:
-			err = c.initializeCase(ctx, item, chat)
-		case store.JoinVerifying:
-			err = c.reconcileVerification(ctx, item, chat)
-		case store.JoinReviewPending:
-			err = c.ensureReview(ctx, item.ID)
-			if err == nil && (item.ActionState == store.ActionPending || item.ActionState == store.ActionFailed ||
-				(item.ActionState == store.ActionProcessing && !item.UpdatedAt.After(now.Add(-actionRetryAge)))) {
-				err = c.processAction(ctx, item.ID)
-			}
-		}
+		err := c.reconcileCase(ctx, item, now)
 		if err != nil && !errors.Is(err, store.ErrActionUnavailable) {
 			c.logError("reconcile join case", item.ID, err)
 		}
-	}
-	if err := c.reconcileReviewCards(ctx); err != nil {
-		c.logError("reconcile review cards", 0, err)
 	}
 }
 
@@ -495,9 +519,7 @@ func (c *Coordinator) reconcileVerification(ctx context.Context, item store.Join
 			return err
 		}
 	case store.VerificationExpired:
-		if err := c.database.EnterReview(ctx, item.ID, ReasonExpired, item.Path == store.JoinPathGuard, c.currentTime()); err != nil {
-			return err
-		}
+		return c.expireCase(ctx, item)
 	case store.VerificationCancelled:
 		if err := c.database.EnterReview(ctx, item.ID, ReasonUnreachable, item.Path == store.JoinPathGuard, c.currentTime()); err != nil {
 			return err
@@ -525,7 +547,11 @@ func (c *Coordinator) ensureReview(ctx context.Context, caseID int64) error {
 	if err != nil {
 		return err
 	}
-	_, _, err = c.database.EnsureReview(ctx, caseID, publicID, c.currentTime().Add(defaultReviewLifetime), c.currentTime())
+	item, err := c.database.GetJoinCase(ctx, caseID)
+	if err != nil {
+		return err
+	}
+	_, _, err = c.database.EnsureReview(ctx, caseID, publicID, item.DeadlineAt, c.currentTime())
 	return err
 }
 
@@ -540,9 +566,28 @@ func (c *Coordinator) processAction(ctx context.Context, caseID int64) error {
 		_ = c.database.FailCaseAction(ctx, item.ID, item.ActionKind, now)
 		return err
 	}
+	if !chat.Enabled {
+		return store.ErrActionUnavailable
+	}
+	if item.ActionKind == ActionRestrict || item.ActionKind == ActionRestore || item.ActionKind == ActionKick || item.ActionKind == ActionBan {
+		checkCtx, stop := context.WithTimeout(ctx, 8*time.Second)
+		status, checkErr := c.telegram.MemberStatus(checkCtx, item.ChatID, item.UserID)
+		stop()
+		if checkErr != nil {
+			_ = c.database.FailCaseAction(ctx, item.ID, item.ActionKind, now)
+			return checkErr
+		}
+		if status == models.ChatMemberTypeOwner || status == models.ChatMemberTypeAdministrator || item.UserID == c.options.OwnerUserID ||
+			(item.Path == store.JoinPathDirect && (status == models.ChatMemberTypeLeft || status == models.ChatMemberTypeBanned)) {
+			return c.database.CancelJoinCase(ctx, item.ID, now)
+		}
+	}
 	actionContext, cancel := context.WithTimeout(ctx, 8*time.Second)
 	err = c.executeTelegramAction(actionContext, item, chat)
 	cancel()
+	if errors.Is(err, ErrRequestHandled) {
+		return c.database.CancelJoinCase(ctx, item.ID, now)
+	}
 	if err != nil {
 		_ = c.database.FailCaseAction(ctx, item.ID, item.ActionKind, now)
 		return err
@@ -600,7 +645,8 @@ func (c *Coordinator) executeTelegramAction(ctx context.Context, item store.Join
 			return ErrStartInvalid
 		}
 		deepLink := "https://t.me/" + c.options.BotUsername + "?start=verify_" + item.VerificationSessionID
-		return c.telegram.DeliverDirectVerification(ctx, item.ChatID, item.UserID, verificationPrompt(chat.Language), verificationURL, deepLink)
+		prompt := fmt.Sprintf("%s (%d)\n%s", strings.TrimSpace(item.UserFirstName+" "+item.UserLastName), item.UserID, verificationPrompt(chat.Language))
+		return c.telegram.DeliverDirectVerification(ctx, item.ChatID, item.UserID, prompt, verificationURL, deepLink)
 	case ActionApprove:
 		return c.telegram.ApproveJoinRequest(ctx, item.ChatID, item.UserID)
 	case ActionDecline:
@@ -608,6 +654,9 @@ func (c *Coordinator) executeTelegramAction(ctx context.Context, item store.Join
 	case ActionRestrict:
 		return c.telegram.RestrictMember(ctx, item.ChatID, item.UserID)
 	case ActionRestore:
+		if item.PriorPermissions != "" {
+			return c.telegram.RestorePriorPermissions(ctx, item.ChatID, item.UserID, item.PriorPermissions, item.PriorUntil)
+		}
 		return c.telegram.RestoreDefaultPermissions(ctx, item.ChatID, item.UserID)
 	case ActionKick:
 		return c.telegram.KickMember(ctx, item.ChatID, item.UserID)
@@ -649,12 +698,12 @@ func (c *Coordinator) reconcileReviewCards(ctx context.Context) error {
 		messageID := review.ManagementMessageID
 		cardContext, cancel := context.WithTimeout(ctx, 8*time.Second)
 		if review.Status == store.ReviewPending && messageID == 0 {
-			messageID, err = c.telegram.SendReviewCard(cardContext, c.options.ManagementChatID, review.ManagementTopicID, text, buttons)
+			messageID, err = c.telegram.SendReviewCard(cardContext, review.ManagementChatID, 0, text, buttons)
 		} else if review.Status == store.ReviewCompleted {
 			if messageID == 0 {
-				messageID, err = c.telegram.SendReviewCard(cardContext, c.options.ManagementChatID, review.ManagementTopicID, text, nil)
+				messageID, err = c.telegram.SendReviewCard(cardContext, review.ManagementChatID, 0, text, nil)
 			} else {
-				err = c.telegram.EditReviewCard(cardContext, c.options.ManagementChatID, messageID, text)
+				err = c.telegram.EditReviewCard(cardContext, review.ManagementChatID, messageID, text)
 			}
 		} else {
 			err = store.ErrJoinCaseState
@@ -689,12 +738,16 @@ func (c *Coordinator) reviewCard(ctx context.Context, claim store.ReviewClaim) (
 	}
 	labels := reviewLabels(chat.Language)
 	prefix := "ta:r:" + claim.Review.PublicID + ":"
-	return text, []ReviewButton{
+	buttons := []ReviewButton{
 		{Text: labels[0], Data: prefix + "o"},
 		{Text: labels[1], Data: prefix + "t"},
 		{Text: labels[2], Data: prefix + "d"},
 		{Text: labels[3], Data: prefix + "b"},
-	}, nil
+	}
+	if chat.ReentryTrustSeconds == 0 {
+		buttons = append(buttons[:1], buttons[2:]...)
+	}
+	return text, buttons, nil
 }
 
 func (c *Coordinator) currentTime() time.Time {
@@ -799,5 +852,47 @@ func validToken(token string) bool {
 
 func randomFill(target []byte) error {
 	_, err := rand.Read(target)
+	return err
+}
+
+func (c *Coordinator) expireCase(ctx context.Context, item store.JoinCase) error {
+	action := ActionDecline
+	if item.Path == store.JoinPathDirect {
+		action = ActionKick
+	}
+	if err := c.database.ScheduleCaseAction(ctx, item.ID, action, c.currentTime()); err != nil {
+		return err
+	}
+	return c.processAction(ctx, item.ID)
+}
+
+func (c *Coordinator) lockMember(userID int64) func() {
+	lock := &c.workflowMu[uint64(userID)%uint64(len(c.workflowMu))]
+	lock.Lock()
+	return lock.Unlock
+}
+func (c *Coordinator) reconcileCase(ctx context.Context, previous store.JoinCase, now time.Time) error {
+	unlock := c.lockMember(previous.UserID)
+	defer unlock()
+	item, err := c.database.GetJoinCase(ctx, previous.ID)
+	if err != nil {
+		return err
+	}
+	chat, err := c.database.GetManagedChat(ctx, item.ChatID)
+	if err != nil || !chat.Enabled {
+		return nil
+	}
+	switch item.Status {
+	case store.JoinInitializing:
+		err = c.initializeCase(ctx, item, chat)
+	case store.JoinVerifying:
+		err = c.reconcileVerification(ctx, item, chat)
+	case store.JoinReviewPending:
+		err = c.ensureReview(ctx, item.ID)
+		if err == nil && (item.ActionState == store.ActionPending || item.ActionState == store.ActionFailed ||
+			(item.ActionState == store.ActionProcessing && !item.UpdatedAt.After(now.Add(-actionRetryAge)))) {
+			err = c.processAction(ctx, item.ID)
+		}
+	}
 	return err
 }

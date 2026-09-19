@@ -1,0 +1,8 @@
+# Toolchain versions for local development.
+# Application / module versions live in go.mod; app release tag is set via Make VERSION.
+
+[tools]
+go = "1.27.0"
+node = "24.19.0"
+npm = "11.17.0"
+pnpm = "11.24.0"

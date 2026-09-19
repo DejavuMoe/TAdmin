@@ -76,11 +76,13 @@ func (c Challenge) Check(points []Point) (bool, error) {
 	if len(points) != 2 {
 		return false, ErrInvalidCoordinates
 	}
-	for index, point := range points {
+	for _, point := range points {
 		if math.IsNaN(point.X) || math.IsNaN(point.Y) || math.IsInf(point.X, 0) || math.IsInf(point.Y, 0) ||
 			point.X < 0 || point.X >= 1 || point.Y < 0 || point.Y >= 1 {
 			return false, ErrInvalidCoordinates
 		}
+	}
+	for index, point := range points {
 		cellIndex := int(math.Floor(point.Y*GridSize))*GridSize + int(math.Floor(point.X*GridSize))
 		if cellIndex != c.targets[index] {
 			return false, nil

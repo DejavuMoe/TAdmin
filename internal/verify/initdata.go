@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	DefaultInitDataMaxAge = 5 * time.Minute
+	DefaultInitDataMaxAge = 15 * time.Minute
 	DefaultFutureSkew     = 30 * time.Second
 	maxInitDataBytes      = 16 << 10
 )
@@ -27,10 +27,12 @@ var (
 )
 
 type InitData struct {
-	UserID     int64
-	AuthDate   time.Time
-	QueryID    string
-	StartParam string
+	UserID       int64
+	AuthDate     time.Time
+	QueryID      string
+	GuardQueryID string
+	ChatID       int64
+	StartParam   string
 }
 
 type initDataUser struct {
@@ -97,10 +99,19 @@ func ValidateInitData(raw, botToken string, now time.Time, maxAge, futureSkew ti
 	if err := json.Unmarshal([]byte(values.Get("user")), &user); err != nil || user.ID <= 0 {
 		return InitData{}, ErrInitDataInvalid
 	}
+	var chat struct {
+		ID int64 `json:"id"`
+	}
+	if rawChat := values.Get("chat"); rawChat != "" {
+		if json.Unmarshal([]byte(rawChat), &chat) != nil {
+			return InitData{}, ErrInitDataInvalid
+		}
+	}
 	return InitData{
-		UserID:     user.ID,
-		AuthDate:   authDate,
-		QueryID:    values.Get("query_id"),
+		UserID:       user.ID,
+		AuthDate:     authDate,
+		QueryID:      values.Get("query_id"),
+		GuardQueryID: values.Get("chat_join_request_query_id"), ChatID: chat.ID,
 		StartParam: values.Get("start_param"),
 	}, nil
 }

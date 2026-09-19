@@ -1,5 +1,5 @@
 [Unit]
-Description=TAdmin Telegram supergroup verification and moderation bot
+Description=TAdmin Telegram admission verification bot
 Wants=network-online.target
 After=network-online.target
 
@@ -14,7 +14,7 @@ StateDirectoryMode=0700
 ExecStart=/usr/local/bin/tadmin --config /etc/tadmin/config.toml
 Restart=on-failure
 RestartSec=5s
-TimeoutStopSec=15s
+TimeoutStopSec=20s
 UMask=0077
 
 NoNewPrivileges=true

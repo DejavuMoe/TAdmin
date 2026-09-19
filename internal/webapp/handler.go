@@ -24,6 +24,7 @@ type Handler struct {
 	sessionLimiter *fixedWindowLimiter
 	clientLimiter  *fixedWindowLimiter
 	notifyTerminal func()
+	imageSlots     chan struct{}
 }
 
 type openRequest struct {
@@ -38,6 +39,7 @@ type answerRequest struct {
 
 type apiView struct {
 	Status            string `json:"status"`
+	ServerTime        int64  `json:"server_time"`
 	Language          string `json:"language"`
 	Prompt            string `json:"prompt,omitempty"`
 	Generation        int    `json:"generation,omitempty"`
@@ -51,6 +53,7 @@ func New(service *verify.Service, notifyTerminal ...func()) *Handler {
 		service:        service,
 		sessionLimiter: newFixedWindowLimiter(time.Minute, 40, 4096),
 		clientLimiter:  newFixedWindowLimiter(time.Minute, 240, 1024),
+		imageSlots:     make(chan struct{}, 2),
 	}
 	if len(notifyTerminal) > 0 {
 		handler.notifyTerminal = notifyTerminal[0]
@@ -201,6 +204,14 @@ func (h *Handler) serveImage(response http.ResponseWriter, request *http.Request
 		writeAPIError(response, http.StatusBadRequest, "invalid_request")
 		return
 	}
+	// Bound PNG allocation/CPU under concurrent image requests.
+	select {
+	case h.imageSlots <- struct{}{}:
+		defer func() { <-h.imageSlots }()
+	case <-request.Context().Done():
+		writeAPIError(response, http.StatusServiceUnavailable, "request_cancelled")
+		return
+	}
 	contents, err := h.service.Image(request.Context(), token, generation)
 	if err != nil {
 		writeServiceError(response, err)
@@ -265,6 +276,7 @@ func decodeJSON(response http.ResponseWriter, request *http.Request, target any)
 func viewResponse(token string, view verify.View) apiView {
 	response := apiView{
 		Status:            view.Status,
+		ServerTime:        time.Now().Unix(),
 		Language:          view.Language,
 		Prompt:            view.Prompt,
 		Generation:        view.Generation,

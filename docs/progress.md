@@ -185,3 +185,26 @@ Stage 6 requires a dedicated test Bot Token supplied through a protected environ
 ## Next stage
 
 Stage 6 performs the checklist above against disposable Telegram groups, fixes only acceptance defects, and—only after all local and live checks pass—packages `v0.1.0`. It must not create a local tag, push, or publish a remote Release without explicit user authorization.
+
+## 2026-09-17 — verification-only delivery candidate
+
+This entry supersedes the old product scope and live-acceptance assumptions above; it does not rewrite historical results. The project has no production deployment or production data.
+
+- Delivered the narrowed admission-verification runtime for three non-forum supergroups, including linked discussions. Removed moderation/invitation coordinator startup, message scoring, and their commands from the production route; historical packages/migrations remain isolated.
+- Replaced forum setup with management-chat send/edit checks and private owner commands for explicit group onboarding, listing, status, and verification timeout. Saved review destinations bind callbacks to a nonzero message ID and current source-group authority.
+- Made expiry directly remove/decline without a 30-minute extension. Preserved fixed deadlines across initialization failure/restart and successful CAPTCHA state across delayed restoration. Protected existing individual restrictions and administrator/banned/left member states.
+- Corrected Mini App Guard identity fields, restricted membership interpretation, false API results, completed-application proof consumption, startup backlog ordering, and incomplete coordinate validation discovered by fuzzing.
+- Added persistent polling offsets, database instance locking and Bot ID binding, shared Telegram flood wait, separate card delivery, completion audit/outbox records, explicit permission serialization, bounded PNG rendering, and an offline `--check` command.
+- Added a non-root scratch Docker image, Linux Compose template, revised systemd/Nginx examples, and complete current deployment/operations/verification documents. No production service, Git tag, push, or remote release was created.
+- Offline validation: full unit/integration tests and repeated race runs; vet and module verification; parser/coordinate fuzzing; govulncheck v1.8.0 reported no known reachable vulnerabilities; amd64/arm64 static builds and SHA-256; native and network-disabled read-only container SQLite checks; Compose, Nginx 1.28.0 and systemd template checks.
+- Browser QA used existing Playwright/Chromium against the real local Go verifier with a synthetic Telegram bridge: desktop/mobile, light/dark theme variables, 320px layout, keyboard input, retries, terminal failure/success, missing authorization, and client clock skew. This is not a Telegram-client acceptance result.
+
+Candidate artifacts are `dist/tadmin-linux-amd64`, `dist/tadmin-linux-arm64`, `dist/SHA256SUMS`, local image `tadmin:v0.1.0-rc.1`, and offline evidence under `dist/qa/`. See `docs/verification.md` for reproducible commands and the remaining real Telegram checklist. Do not declare production acceptance until that checklist is executed with actual credentials and disposable groups.
+
+## 2026-09-17 — remove mandatory review-group setup
+
+Corrected an unnecessary product constraint: admission verification does not require a second group. Review cards/logs now default to the owner private chat; an existing shared group, including the source itself, remains optional. Destination snapshots and live source-admin authorization remain intact. Local deployment configuration now selects the private default without changing the owner's other values or Token. This change sends no live Telegram messages and does not enable any real group.
+
+## 2026-09-17 — real owner Mini App acceptance
+
+The owner completed an actual Telegram-client CAPTCHA over an authorized temporary HTTPS tunnel. SQLite confirms one successful submission, consumed session state, and cleared challenge secret. This was an owner-only UI/authentication session with no join case and no enabled group, so it does not establish live member restriction/approval/removal behavior. The temporary tunnel and proxy were closed, the previous public URL setting restored, and the local bot restarted in its unenrolled state. See `docs/live-testing.md` for the exact evidence and remaining checks.

@@ -1,0 +1,12 @@
+.git
+.codex
+.env
+*.env
+config.toml
+config.docker.toml
+data
+bin
+dist
+*.db
+*.db-*
+*.log

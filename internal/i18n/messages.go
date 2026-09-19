@@ -33,10 +33,10 @@ type Messages struct {
 func For(language string) Messages {
 	if language == "en" {
 		return Messages{
-			Start:               "TAdmin is a private, self-hosted Telegram group verification and moderation bot.\nVersion: %s",
+			Start:               "TAdmin is a private, self-hosted Telegram group admission verification bot.\nVersion: %s",
 			Unauthorized:        "Access denied: this command is restricted to the TAdmin owner.",
-			Usage:               "Usage: /tadmin status|setup|invite, or a supported moderation command.",
-			SetupSupergroupOnly: "This check can only be run inside a Telegram supergroup.",
+			Usage:               "Private: /tadmin status; /tadmin groups; /tadmin setup <chat_id>; /tadmin timeout <chat_id> <30-900 seconds>. In a source group: /tadmin setup or /tadmin timeout <seconds>.",
+			SetupSupergroupOnly: "The source must be a supergroup without forum topics.",
 			SetupCheckFailed:    "The permission check failed. See the service log for details.",
 			SetupTitle:          "TAdmin permission check",
 			BotAdministrator:    "Bot administrator",
@@ -47,8 +47,8 @@ func For(language string) Messages {
 			SetupNotEnabled:     "The group was not enabled.",
 			SetupEnabled:        "TAdmin verification is enabled for this group.",
 			SetupPublicURL:      "Configure an absolute HTTPS public_base_url before setup.",
-			SetupManagement:     "Configure a forum-enabled management supergroup before setup.",
-			SetupManagementPerm: "The bot must be an administrator that can manage topics in the management group.",
+			SetupManagement:     "The optional review destination must be an accessible group without forum topics. Leave management_chat_id unset to use the owner private chat.",
+			SetupManagementPerm: "Cannot send/edit in the review destination. In the default mode, start the bot in your private chat and make sure it is not blocked.",
 			StartVerifyInvalid:  "This verification link is invalid or has expired.",
 			StartVerifyWrong:    "This verification link belongs to another user.",
 			StatusTitle:         "TAdmin status",
@@ -64,10 +64,10 @@ func For(language string) Messages {
 	}
 
 	return Messages{
-		Start:               "TAdmin 是一个私有、自托管的 Telegram 群验证与基础群管机器人。\n版本：%s",
+		Start:               "TAdmin 是一个私有、自托管的 Telegram 入群验证机器人。\n版本：%s",
 		Unauthorized:        "拒绝访问：此命令仅限 TAdmin 全局所有者执行。",
-		Usage:               "用法：/tadmin status|setup|invite，或受支持的群管命令。",
-		SetupSupergroupOnly: "此检查只能在 Telegram 超级群中执行。",
+		Usage:               "私聊：/tadmin status；/tadmin groups；/tadmin setup <群ID>；/tadmin timeout <群ID> <30-900秒>。来源群：/tadmin setup 或 /tadmin timeout <秒数>。",
+		SetupSupergroupOnly: "来源群必须是无话题超级群。",
 		SetupCheckFailed:    "权限检查失败，请查看服务日志了解详情。",
 		SetupTitle:          "TAdmin 权限检查",
 		BotAdministrator:    "机器人管理员",
@@ -78,8 +78,8 @@ func For(language string) Messages {
 		SetupNotEnabled:     "未启用此群组。",
 		SetupEnabled:        "此群组已启用 TAdmin 验证。",
 		SetupPublicURL:      "接入前请配置绝对 HTTPS public_base_url。",
-		SetupManagement:     "接入前请配置已启用话题的管理超级群。",
-		SetupManagementPerm: "机器人必须是管理群管理员，并具有管理话题权限。",
+		SetupManagement:     "可选的审核目的地必须是机器人可访问的无话题群；不配置 management_chat_id 即使用所有者私聊。",
+		SetupManagementPerm: "无法向审核目的地发送或编辑消息。默认模式下，请先私聊机器人点击 Start，并确保没有屏蔽机器人。",
 		StartVerifyInvalid:  "验证链接无效或已过期。",
 		StartVerifyWrong:    "此验证链接属于其他用户。",
 		StatusTitle:         "TAdmin 状态",

@@ -3,7 +3,9 @@ package store
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"golang.org/x/sys/unix"
 	"os"
 	"path/filepath"
 
@@ -13,7 +15,8 @@ import (
 const busyTimeoutMilliseconds = 5000
 
 type Store struct {
-	db *sql.DB
+	db   *sql.DB
+	lock *os.File
 }
 
 func Open(ctx context.Context, databasePath string) (*Store, error) {
@@ -21,6 +24,25 @@ func Open(ctx context.Context, databasePath string) (*Store, error) {
 		return nil, err
 	}
 
+	lock, err := os.OpenFile(databasePath+".lock", os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil {
+		return nil, fmt.Errorf("open database lock: %w", err)
+	}
+	if err = unix.Flock(int(lock.Fd()), unix.LOCK_EX|unix.LOCK_NB); err != nil {
+		lock.Close()
+		return nil, fmt.Errorf("database is already in use by another instance: %w", err)
+	}
+	failed := true
+	defer func() {
+		if failed {
+			lock.Close()
+		}
+	}()
+	file, err := os.OpenFile(databasePath, os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil {
+		return nil, err
+	}
+	file.Close()
 	db, err := sql.Open("sqlite", databasePath)
 	if err != nil {
 		return nil, fmt.Errorf("open SQLite database: %w", err)
@@ -31,11 +53,12 @@ func Open(ctx context.Context, databasePath string) (*Store, error) {
 	db.SetMaxOpenConns(1)
 	db.SetMaxIdleConns(1)
 
-	s := &Store{db: db}
+	s := &Store{db: db, lock: lock}
 	if err := s.initialize(ctx); err != nil {
 		_ = db.Close()
 		return nil, err
 	}
+	failed = false
 	return s, nil
 }
 
@@ -81,10 +104,12 @@ func (s *Store) CountManagedChats(ctx context.Context) (int, error) {
 }
 
 func (s *Store) Close() error {
-	if err := s.db.Close(); err != nil {
-		return fmt.Errorf("close SQLite database: %w", err)
+	err := s.db.Close()
+	if s.lock != nil {
+		err = errors.Join(err, s.lock.Close())
+		s.lock = nil
 	}
-	return nil
+	return err
 }
 
 func ensureParentDirectory(databasePath string) error {

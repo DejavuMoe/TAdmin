@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -120,7 +121,7 @@ func TestInviteGatewayClassifiesPermissionErrors(t *testing.T) {
 	}
 }
 
-func TestDirectDeliveryUsesPrivateEphemeralAndURLFallback(t *testing.T) {
+func TestDirectDeliveryUsesPrivateAndURLFallback(t *testing.T) {
 	var mu sync.Mutex
 	var calls []map[string]string
 	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
@@ -153,13 +154,10 @@ func TestDirectDeliveryUsesPrivateEphemeralAndURLFallback(t *testing.T) {
 	}
 	mu.Lock()
 	defer mu.Unlock()
-	if len(calls) != 3 {
+	if len(calls) != 2 {
 		t.Fatalf("sendMessage calls = %d: %#v", len(calls), calls)
 	}
-	if calls[1]["receiver_user_id"] != "42" {
-		t.Fatalf("ephemeral params = %#v", calls[1])
-	}
-	fallback := calls[2]["reply_markup"]
+	fallback := calls[1]["reply_markup"]
 	if !strings.Contains(fallback, deepLink) || strings.Contains(fallback, "web_app") {
 		t.Fatalf("group fallback markup = %s", fallback)
 	}
@@ -192,24 +190,32 @@ func TestDirectDeliveryKeepsGroupFallbackUnusedWhenPrivateSucceeds(t *testing.T)
 	}
 	mu.Lock()
 	defer mu.Unlock()
-	if len(calls) != 2 || calls[0]["chat_id"] != "42" || !strings.Contains(calls[0]["reply_markup"], "web_app") || calls[1]["receiver_user_id"] != "42" {
+	if len(calls) != 1 || calls[0]["chat_id"] != "42" || !strings.Contains(calls[0]["reply_markup"], "web_app") {
 		t.Fatalf("delivery calls = %#v", calls)
 	}
 }
 
-func TestRestoreUsesCurrentGroupDefaultPermissions(t *testing.T) {
+func TestRestorePreservesExplicitPriorPermissions(t *testing.T) {
 	var restrictedPermissions string
 	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		method := request.URL.Path[strings.LastIndex(request.URL.Path, "/")+1:]
-		if err := request.ParseMultipartForm(1 << 20); err != nil {
-			t.Fatal(err)
+		if method != "restrictChatMember" {
+			if err := request.ParseMultipartForm(1 << 20); err != nil {
+				t.Fatal(err)
+			}
 		}
 		response.Header().Set("Content-Type", "application/json")
 		switch method {
 		case "getChat":
-			_, _ = response.Write([]byte(`{"ok":true,"result":{"id":-1001,"type":"supergroup","title":"Source","permissions":{"can_send_messages":true,"can_send_photos":false,"can_invite_users":true}}}`))
+			_, _ = response.Write([]byte(`{"ok":true,"result":{"id":-1001,"type":"supergroup","title":"Source","permissions":{"can_send_messages":true,"can_send_photos":false,"can_invite_users":true,"can_pin_messages":true,"can_edit_tag":false,"can_react_to_messages":false}}}`))
 		case "restrictChatMember":
-			restrictedPermissions = request.FormValue("permissions")
+			var body struct {
+				Permissions json.RawMessage `json:"permissions"`
+			}
+			if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
+				t.Error(err)
+			}
+			restrictedPermissions = string(body.Permissions)
 			_, _ = response.Write([]byte(`{"ok":true,"result":true}`))
 		default:
 			http.Error(response, fmt.Sprintf("unexpected method %s", method), http.StatusNotFound)
@@ -220,11 +226,11 @@ func TestRestoreUsesCurrentGroupDefaultPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	gateway := &gateway{bot: bot, token: "123:test"}
-	if err := gateway.RestoreDefaultPermissions(context.Background(), -1001, 42); err != nil {
+	gateway := &gateway{bot: bot, token: "123:test", raw: &rawBotAPI{baseURL: server.URL, token: "123:test", httpClient: server.Client()}}
+	if err := gateway.RestorePriorPermissions(context.Background(), -1001, 42, `{"can_send_messages":true,"can_send_photos":false,"can_pin_messages":true,"can_edit_tag":false,"can_react_to_messages":false}`, 0); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(restrictedPermissions, `"can_send_messages":true`) || !strings.Contains(restrictedPermissions, `"can_send_photos":false`) {
+	if !strings.Contains(restrictedPermissions, `"can_edit_tag":false`) || !strings.Contains(restrictedPermissions, `"can_react_to_messages":false`) || !strings.Contains(restrictedPermissions, `"can_send_messages":true`) || !strings.Contains(restrictedPermissions, `"can_send_photos":false`) {
 		t.Fatalf("restored permissions = %s", restrictedPermissions)
 	}
 }
@@ -255,7 +261,7 @@ func TestModerationMuteUsesExplicitUntilDateAndFalsePermissions(t *testing.T) {
 	}
 }
 
-func TestModerationKickIsBanThenUnbanAndBanIsPermanent(t *testing.T) {
+func TestKickUsesSingleUnbanAndBanIsExplicit(t *testing.T) {
 	var calls []string
 	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		method := request.URL.Path[strings.LastIndex(request.URL.Path, "/")+1:]
@@ -275,7 +281,7 @@ func TestModerationKickIsBanThenUnbanAndBanIsPermanent(t *testing.T) {
 	if err := gateway.BanMember(context.Background(), -1001, 43); err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"banChatMember", "unbanChatMember", "banChatMember"}
+	want := []string{"unbanChatMember", "banChatMember"}
 	if fmt.Sprint(calls) != fmt.Sprint(want) {
 		t.Fatalf("calls = %v, want %v", calls, want)
 	}
@@ -293,5 +299,61 @@ func TestDeleteModerationMessageTreatsAlreadyDeletedAsSuccess(t *testing.T) {
 	}
 	if err := (&gateway{bot: bot, token: "123:test"}).DeleteModerationMessage(context.Background(), -1001, 1); err != nil {
 		t.Fatalf("already deleted message: %v", err)
+	}
+}
+
+func TestMemberActionsRejectFalseAPISuccess(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, `{"ok":true,"result":false}`) }))
+	defer server.Close()
+	bot, err := telegrambot.New("123:test", telegrambot.WithSkipGetMe(), telegrambot.WithServerURL(server.URL), telegrambot.WithHTTPClient(time.Second, server.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	gateway := &gateway{bot: bot, token: "123:test"}
+	for name, action := range map[string]func(context.Context, int64, int64) error{"restrict": gateway.RestrictMember, "kick": gateway.KickMember, "ban": gateway.BanMember, "decline": gateway.DeclineJoinRequest, "approve": gateway.ApproveJoinRequest} {
+		if err := action(context.Background(), -1001, 42); err == nil {
+			t.Errorf("%s accepted false result", name)
+		}
+	}
+}
+
+func TestNormalRestoreLiftsRestrictionsAndShortPriorExpiryWaits(t *testing.T) {
+	var calls int
+	var rights map[string]bool
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		var body struct {
+			Permissions map[string]bool `json:"permissions"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Error(err)
+		}
+		rights = body.Permissions
+		fmt.Fprint(w, `{"ok":true,"result":true}`)
+	}))
+	defer server.Close()
+	gateway := &gateway{raw: &rawBotAPI{baseURL: server.URL, token: "123:test", httpClient: server.Client()}}
+	if err := gateway.RestoreDefaultPermissions(context.Background(), -1001, 42); err != nil {
+		t.Fatal(err)
+	}
+	if len(rights) != 16 {
+		t.Fatalf("permission fields=%d", len(rights))
+	}
+	for field, allowed := range rights {
+		if !allowed {
+			t.Errorf("%s is still individually restricted", field)
+		}
+	}
+	if err := gateway.RestorePriorPermissions(context.Background(), -1001, 42, `{}`, time.Now().Unix()+10); err == nil {
+		t.Fatal("short until_date would create an unintended permanent restriction")
+	}
+	if calls != 1 {
+		t.Fatal("sent unsafe short restriction")
+	}
+	if err := gateway.RestorePriorPermissions(context.Background(), -1001, 42, `{}`, time.Now().Unix()-1); err != nil {
+		t.Fatal(err)
+	}
+	if calls != 2 {
+		t.Fatal("expired prior restriction was not lifted")
 	}
 }

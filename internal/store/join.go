@@ -48,6 +48,7 @@ type ManagedChat struct {
 	ModerationEnabled          bool
 	Language                   string
 	ManagementTopicID          int
+	ManagementChatID           int64
 	VerificationTimeoutSeconds int
 	ReentryTrustSeconds        int
 	CreatedAt                  time.Time
@@ -56,6 +57,9 @@ type ManagedChat struct {
 
 type JoinCase struct {
 	ID                    int64
+	DeadlineAt            time.Time
+	PriorPermissions      string
+	PriorUntil            int64
 	SourceKey             string
 	UpdateID              int64
 	Path                  string
@@ -90,6 +94,7 @@ type ReviewItem struct {
 	Reason              string
 	DeadlineAt          time.Time
 	ManagementTopicID   int
+	ManagementChatID    int64
 	ManagementMessageID int
 	CardState           string
 	Decision            string
@@ -110,10 +115,10 @@ func (s *Store) GetManagedChat(ctx context.Context, chatID int64) (ManagedChat, 
 	var createdAt, updatedAt int64
 	err := s.db.QueryRowContext(ctx, `
 		SELECT chat_id, title, enabled, moderation_enabled, language, COALESCE(management_topic_id, 0),
-		       verification_timeout_seconds, reentry_trust_seconds, created_at, updated_at
+		       verification_timeout_seconds, reentry_trust_seconds, created_at, updated_at, management_chat_id
 		FROM managed_chats WHERE chat_id = ?
 	`, chatID).Scan(&chat.ChatID, &chat.Title, &enabled, &moderationEnabled, &chat.Language, &chat.ManagementTopicID,
-		&chat.VerificationTimeoutSeconds, &chat.ReentryTrustSeconds, &createdAt, &updatedAt)
+		&chat.VerificationTimeoutSeconds, &chat.ReentryTrustSeconds, &createdAt, &updatedAt, &chat.ManagementChatID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ManagedChat{}, ErrManagedChatNotFound
 	}
@@ -128,7 +133,7 @@ func (s *Store) GetManagedChat(ctx context.Context, chatID int64) (ManagedChat, 
 }
 
 // SaveManagedChatSetup records an onboarding checkpoint. Callers keep enabled
-// false until the management topic has passed its send/edit check.
+// false until the management chat has passed its send/edit check.
 func (s *Store) SaveManagedChatSetup(ctx context.Context, chat ManagedChat, now time.Time) error {
 	if chat.ChatID == 0 || (chat.Language != "zh-CN" && chat.Language != "en") ||
 		chat.VerificationTimeoutSeconds < 30 || chat.VerificationTimeoutSeconds > 900 ||
@@ -142,18 +147,19 @@ func (s *Store) SaveManagedChatSetup(ctx context.Context, chat ManagedChat, now 
 	_, err := s.db.ExecContext(ctx, `
 		INSERT INTO managed_chats (
 			chat_id, title, enabled, language, management_topic_id,
-			verification_timeout_seconds, reentry_trust_seconds, created_at, updated_at
-		) VALUES (?, ?, ?, ?, NULLIF(?, 0), ?, ?, ?, ?)
+			verification_timeout_seconds, reentry_trust_seconds, created_at, updated_at, management_chat_id
+		) VALUES (?, ?, ?, ?, NULLIF(?, 0), ?, ?, ?, ?, ?)
 		ON CONFLICT(chat_id) DO UPDATE SET
 			title = excluded.title,
 			enabled = excluded.enabled,
 			language = excluded.language,
-			management_topic_id = COALESCE(excluded.management_topic_id, managed_chats.management_topic_id),
+			management_topic_id = excluded.management_topic_id,
+			management_chat_id = excluded.management_chat_id,
 			verification_timeout_seconds = excluded.verification_timeout_seconds,
 			reentry_trust_seconds = excluded.reentry_trust_seconds,
 			updated_at = excluded.updated_at
 	`, chat.ChatID, chat.Title, enabled, chat.Language, chat.ManagementTopicID,
-		chat.VerificationTimeoutSeconds, chat.ReentryTrustSeconds, now.Unix(), now.Unix())
+		chat.VerificationTimeoutSeconds, chat.ReentryTrustSeconds, now.Unix(), now.Unix(), chat.ManagementChatID)
 	if err != nil {
 		return fmt.Errorf("save managed chat setup: %w", err)
 	}
@@ -195,16 +201,23 @@ func (s *Store) CreateJoinCase(ctx context.Context, item JoinCase, now time.Time
 		item.SourceRef == "" || !validJoinPath(item.Path) {
 		return JoinCase{}, false, ErrJoinCaseState
 	}
+	if item.DeadlineAt.IsZero() {
+		chat, err := s.GetManagedChat(ctx, item.ChatID)
+		if err != nil {
+			return JoinCase{}, false, err
+		}
+		item.DeadlineAt = now.Add(time.Duration(chat.VerificationTimeoutSeconds) * time.Second)
+	}
 	result, err := s.db.ExecContext(ctx, `
 		INSERT INTO join_cases (
 			source_key, update_id, path, chat_id, user_id, user_chat_id, source_ref,
 			invite_source, user_first_name, user_last_name, username, reason, status,
-			action_state, joined_at, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			action_state, joined_at, created_at, updated_at, deadline_at, prior_permissions, prior_until
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(source_key) DO NOTHING
 	`, item.SourceKey, item.UpdateID, item.Path, item.ChatID, item.UserID, item.UserChatID,
 		item.SourceRef, item.InviteSource, item.UserFirstName, item.UserLastName, item.Username,
-		cleanReason(item.Reason), JoinInitializing, ActionNone, nullableUnix(item.JoinedAt), now.Unix(), now.Unix())
+		cleanReason(item.Reason), JoinInitializing, ActionNone, nullableUnix(item.JoinedAt), now.Unix(), now.Unix(), item.DeadlineAt.Unix(), item.PriorPermissions, item.PriorUntil)
 	if err != nil {
 		return JoinCase{}, false, fmt.Errorf("create join case: %w", err)
 	}
@@ -324,7 +337,7 @@ func (s *Store) ClaimCaseAction(ctx context.Context, caseID int64, retryBefore, 
 	if err != nil {
 		return JoinCase{}, err
 	}
-	claimable := item.ActionState == ActionPending || item.ActionState == ActionFailed ||
+	claimable := item.ActionState == ActionPending || (item.ActionState == ActionFailed && !item.UpdatedAt.After(retryBefore)) ||
 		(item.ActionState == ActionProcessing && !item.UpdatedAt.After(retryBefore))
 	if !claimable || item.ActionKind == "" || item.Status == JoinResolved || item.Status == JoinCancelled {
 		return JoinCase{}, ErrActionUnavailable
@@ -463,6 +476,16 @@ func (s *Store) CompleteCaseAction(ctx context.Context, caseID int64, expectedAc
 			return err
 		}
 	}
+	if nextStatus == JoinResolved {
+		_, err = tx.ExecContext(ctx, `INSERT INTO review_items
+ (chat_id,user_id,status,created_at,updated_at,join_case_id,public_id,reason,deadline_at,card_state,decision,management_chat_id,decided_at)
+ SELECT j.chat_id,j.user_id,'completed',?,?,j.id,lower(hex(randomblob(12))),j.reason,j.deadline_at,'pending',j.action_kind,c.management_chat_id,?
+ FROM join_cases j JOIN managed_chats c ON c.chat_id=j.chat_id
+ WHERE j.id=? AND c.management_chat_id<>0 ON CONFLICT DO NOTHING`, now.Unix(), now.Unix(), now.Unix(), caseID)
+		if err != nil {
+			return fmt.Errorf("create completion log: %w", err)
+		}
+	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("commit action completion: %w", err)
 	}
@@ -514,7 +537,7 @@ func (s *Store) EnterReview(ctx context.Context, caseID int64, reason string, qu
 }
 
 func (s *Store) EnsureReview(ctx context.Context, caseID int64, publicID string, deadline, now time.Time) (ReviewItem, bool, error) {
-	if publicID == "" || !deadline.After(now) {
+	if publicID == "" {
 		return ReviewItem{}, false, ErrJoinCaseState
 	}
 	item, err := s.GetJoinCase(ctx, caseID)
@@ -536,11 +559,11 @@ func (s *Store) EnsureReview(ctx context.Context, caseID int64, publicID string,
 	result, err := tx.ExecContext(ctx, `
 		INSERT INTO review_items (
 			chat_id, user_id, verification_session_id, status, created_at, updated_at,
-			join_case_id, public_id, reason, deadline_at, management_topic_id, card_state
-		) VALUES (?, ?, NULLIF(?, ''), ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			join_case_id, public_id, reason, deadline_at, management_topic_id, card_state, management_chat_id
+		) VALUES (?, ?, NULLIF(?, ''), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT DO NOTHING
 	`, item.ChatID, item.UserID, item.VerificationSessionID, ReviewPending, now.Unix(), now.Unix(),
-		item.ID, publicID, item.Reason, deadline.Unix(), chat.ManagementTopicID, ActionPending)
+		item.ID, publicID, item.Reason, deadline.Unix(), 0, ActionPending, chat.ManagementChatID)
 	if err != nil {
 		return ReviewItem{}, false, fmt.Errorf("create review item: %w", err)
 	}
@@ -833,6 +856,7 @@ func (s *Store) HasResolvedApplication(ctx context.Context, chatID, userID int64
 			SELECT 1 FROM join_cases
 			WHERE chat_id = ? AND user_id = ? AND path IN (?, ?)
 			  AND status = ? AND resolved_at >= ?
+			  AND action_kind IN ('approve_request', 'guard_approve')
 		)
 	`, chatID, userID, JoinPathGuard, JoinPathRequest, JoinResolved, since.Unix()).Scan(&found)
 	if err != nil {
@@ -841,19 +865,62 @@ func (s *Store) HasResolvedApplication(ctx context.Context, chatID, userID int64
 	return found, nil
 }
 
+// UseResolvedApplication consumes a successful application and schedules the
+// corresponding member event in one transaction, including restart recovery.
+func (s *Store) UseResolvedApplication(ctx context.Context, caseID int64, since, now time.Time) (bool, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return false, err
+	}
+	defer tx.Rollback()
+	item, err := scanJoinCase(tx.QueryRowContext(ctx, joinCaseSelect+` WHERE id=?`, caseID))
+	if err != nil {
+		return false, err
+	}
+	if item.Path != JoinPathDirect || item.Status != JoinInitializing {
+		return false, ErrJoinCaseState
+	}
+	if item.ActionKind == "record_member" {
+		return true, nil
+	}
+	result, err := tx.ExecContext(ctx, `UPDATE join_cases SET member_event_consumed=1 WHERE id=(
+ SELECT id FROM join_cases WHERE chat_id=? AND user_id=? AND path IN ('guard','join_request') AND status='resolved'
+ AND resolved_at>=? AND action_kind IN ('approve_request','guard_approve') AND member_event_consumed=0 ORDER BY id DESC LIMIT 1
+ ) AND member_event_consumed=0`, item.ChatID, item.UserID, since.Unix())
+	if err != nil {
+		return false, err
+	}
+	n, err := result.RowsAffected()
+	if err != nil || n == 0 {
+		return false, err
+	}
+	_, err = tx.ExecContext(ctx, `UPDATE join_cases SET action_kind='record_member',action_state='pending',updated_at=? WHERE id=?`, now.Unix(), caseID)
+	if err != nil {
+		return false, err
+	}
+	return true, tx.Commit()
+}
+
 func (s *Store) CancelDirectJoin(ctx context.Context, chatID, userID int64, now time.Time) error {
+	var caseID int64
+	err := s.db.QueryRowContext(ctx, `SELECT id FROM join_cases WHERE chat_id=? AND user_id=? AND path=? AND status IN (?,?,?) ORDER BY id DESC LIMIT 1`, chatID, userID, JoinPathDirect, JoinInitializing, JoinVerifying, JoinReviewPending).Scan(&caseID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	return s.CancelJoinCase(ctx, caseID, now)
+}
+
+func (s *Store) CancelJoinCase(ctx context.Context, caseID int64, now time.Time) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin direct cancellation: %w", err)
 	}
 	defer tx.Rollback()
-	var caseID int64
 	var sessionID sql.NullString
-	err = tx.QueryRowContext(ctx, `
-		SELECT id, verification_session_id FROM join_cases
-		WHERE chat_id = ? AND user_id = ? AND path = ? AND status IN (?, ?, ?)
-		ORDER BY id DESC LIMIT 1
-	`, chatID, userID, JoinPathDirect, JoinInitializing, JoinVerifying, JoinReviewPending).Scan(&caseID, &sessionID)
+	err = tx.QueryRowContext(ctx, `SELECT verification_session_id FROM join_cases WHERE id=? AND status NOT IN (?,?)`, caseID, JoinResolved, JoinCancelled).Scan(&sessionID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
@@ -877,10 +944,14 @@ func (s *Store) CancelDirectJoin(ctx context.Context, chatID, userID int64, now 
 	}
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE review_items
-		SET status = ?, decision = 'left', decided_at = ?, card_state = ?, updated_at = ?
+		SET status = ?, decision = 'cancelled', decided_at = ?, card_state = ?, updated_at = ?
 		WHERE join_case_id = ? AND status IN (?, ?)
 	`, ReviewCompleted, now.Unix(), ActionPending, now.Unix(), caseID, ReviewPending, ReviewProcessing); err != nil {
 		return fmt.Errorf("close direct review: %w", err)
+	}
+	if _, err := tx.ExecContext(ctx, `INSERT INTO audit_events(chat_id,target_user_id,event_type,metadata_json,created_at)
+ SELECT chat_id,user_id,'join_cancelled','{}',? FROM join_cases WHERE id=?`, now.Unix(), caseID); err != nil {
+		return err
 	}
 	return tx.Commit()
 }
@@ -903,7 +974,7 @@ const joinCaseSelect = `
 	SELECT id, source_key, update_id, path, chat_id, user_id, user_chat_id, source_ref,
 	       invite_source, user_first_name, user_last_name, username,
 	       COALESCE(verification_session_id, ''), status, reason, action_kind,
-	       action_state, action_attempts, joined_at, resolved_at, created_at, updated_at
+	       action_state, action_attempts, joined_at, resolved_at, created_at, updated_at, deadline_at, prior_permissions, prior_until
 	FROM join_cases`
 
 const reviewSelect = `
@@ -911,24 +982,26 @@ const reviewSelect = `
 	       COALESCE(verification_session_id, ''), status, reason,
 	       COALESCE(deadline_at, 0), COALESCE(management_topic_id, 0),
 	       COALESCE(management_message_id, 0), card_state, decision,
-	       COALESCE(actor_user_id, 0), decided_at, created_at, updated_at
+	       COALESCE(actor_user_id, 0), decided_at, created_at, updated_at, management_chat_id
 	FROM review_items`
 
 func scanJoinCase(row rowScanner) (JoinCase, error) {
 	var item JoinCase
 	var joinedAt, resolvedAt sql.NullInt64
+	var deadlineAt int64
 	var createdAt, updatedAt int64
 	err := row.Scan(&item.ID, &item.SourceKey, &item.UpdateID, &item.Path, &item.ChatID,
 		&item.UserID, &item.UserChatID, &item.SourceRef, &item.InviteSource,
 		&item.UserFirstName, &item.UserLastName, &item.Username,
 		&item.VerificationSessionID, &item.Status, &item.Reason, &item.ActionKind,
-		&item.ActionState, &item.ActionAttempts, &joinedAt, &resolvedAt, &createdAt, &updatedAt)
+		&item.ActionState, &item.ActionAttempts, &joinedAt, &resolvedAt, &createdAt, &updatedAt, &deadlineAt, &item.PriorPermissions, &item.PriorUntil)
 	if errors.Is(err, sql.ErrNoRows) {
 		return JoinCase{}, ErrJoinCaseNotFound
 	}
 	if err != nil {
 		return JoinCase{}, fmt.Errorf("read join case: %w", err)
 	}
+	item.DeadlineAt = time.Unix(deadlineAt, 0).UTC()
 	item.JoinedAt = timePointer(joinedAt)
 	item.ResolvedAt = timePointer(resolvedAt)
 	item.CreatedAt = time.Unix(createdAt, 0).UTC()
@@ -943,7 +1016,7 @@ func scanReview(row rowScanner) (ReviewItem, error) {
 	err := row.Scan(&item.ID, &item.PublicID, &item.JoinCaseID, &item.ChatID, &item.UserID,
 		&item.VerificationSession, &item.Status, &item.Reason, &deadlineAt,
 		&item.ManagementTopicID, &item.ManagementMessageID, &item.CardState,
-		&item.Decision, &item.ActorUserID, &decidedAt, &createdAt, &updatedAt)
+		&item.Decision, &item.ActorUserID, &decidedAt, &createdAt, &updatedAt, &item.ManagementChatID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ReviewItem{}, ErrReviewNotFound
 	}

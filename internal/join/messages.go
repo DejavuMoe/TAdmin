@@ -80,9 +80,9 @@ func formatOptionalTime(value *time.Time) string {
 func actorLabel(actor int64, language string) string {
 	if actor == 0 {
 		if language != "en" {
-			return "自动超时"
+			return "自动处理"
 		}
-		return "automatic timeout"
+		return "automatic"
 	}
 	return fmt.Sprintf("%d", actor)
 }
@@ -121,13 +121,15 @@ func decisionLabel(decision, language string) string {
 		return map[string]string{
 			store.ReviewDecisionOnce: "approved once", store.ReviewDecisionTrust: "approved and trusted",
 			store.ReviewDecisionDeny: "declined", store.ReviewDecisionBan: "banned",
-			store.ReviewDecisionTime: "timed out", "left": "user left",
+			store.ReviewDecisionTime: "timed out", "left": "user left", "cancelled": "workflow cancelled",
+			ActionRestore: "verified; permissions restored", ActionApprove: "verified; approved", ActionGuardApprove: "verified; approved", ActionKick: "removed; may rejoin", ActionDecline: "application declined", ActionRecordMember: "admission recorded",
 		}[decision]
 	}
 	return map[string]string{
 		store.ReviewDecisionOnce: "批准一次", store.ReviewDecisionTrust: "批准并信任",
 		store.ReviewDecisionDeny: "拒绝", store.ReviewDecisionBan: "封禁",
-		store.ReviewDecisionTime: "审核超时", "left": "用户已离群",
+		store.ReviewDecisionTime: "审核超时", "left": "用户已离群", "cancelled": "流程已取消",
+		ActionRestore: "验证通过并恢复权限", ActionApprove: "验证通过并批准", ActionGuardApprove: "验证通过并批准", ActionKick: "已移除，可重新入群", ActionDecline: "申请已拒绝", ActionRecordMember: "已记录入群",
 	}[decision]
 }
 
@@ -159,6 +161,7 @@ func inviteLabel(invite, language string) string {
 func callbackMessage(language, key string) string {
 	if language == "en" {
 		return map[string]string{
+			"disabled":     "Re-entry trust is disabled for this group.",
 			"identity":     "Cannot verify the administrator identity.",
 			"location":     "This review button is not valid here.",
 			"unauthorized": "Only a current source-group administrator can review this request.",
@@ -168,6 +171,7 @@ func callbackMessage(language, key string) string {
 		}[key]
 	}
 	return map[string]string{
+		"disabled":     "此群未启用重入信任。",
 		"identity":     "无法确认管理员身份。",
 		"location":     "此审核按钮不能在这里使用。",
 		"unauthorized": "仅来源群的当前管理员可以处理此审核。",

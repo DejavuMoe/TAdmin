@@ -1,155 +1,80 @@
 # TAdmin
 
-TAdmin is a private, self-hosted Telegram supergroup verification and basic moderation bot. The v0.1.0 plan targets one statically built Go process managing 1-5 supergroups, with SQLite persistence, Long Polling, and an embedded HTTP service behind an existing HTTPS reverse proxy.
+自托管 Telegram **入群验证码机器人**，面向约 3 个、每群 500–1000 人的无话题超级群，也支持频道关联讨论群。
 
-Stages 1-5 provide the runnable foundation, verification engine, all three Telegram join paths, management-topic manual review, deterministic anti-spam scoring, the punishment ladder, Raid protection, owner-managed invitation links, retention cleanup, and production deployment guidance. Live Telegram acceptance and the final v0.1.0 tag remain deferred to stage 6.
+新人加入后，机器人先限制发言，再通过私聊 Mini App 提供图形验证码；通过后解除本次验证限制、遵循当前群默认权限（保留入群时已有的个人限制），超时自动移除并允许重新加入。默认 180 秒、最多 3 次尝试，错误换题不延长截止时间。验证失败可由来源群管理员在原截止时间内审核，超时不会再等待 30 分钟。
 
-## Current capabilities
+**交付状态：离线验收候选版本。** 自动化测试可以验证代码与模拟接口的行为；真实 Telegram Token、群权限、客户端 Mini App 及平台实际投递仍须按照 [验收清单](docs/verification.md) 测试后才能宣布上线可用。
 
-- Go 1.26.5 application with JSON `slog` output and graceful shutdown.
-- TOML deployment configuration; the Bot Token is read only from `TADMIN_BOT_TOKEN`.
-- SQLite initialization with embedded, repeatable migrations, WAL, foreign keys, and a busy timeout.
-- Server-rendered 3x3 PNG challenges with two ordered shape-and-digit targets, a fixed 180-second deadline, three attempts, one-time completion, and atomic SQLite transitions.
-- Telegram Mini App `initData` HMAC-SHA-256 validation with a five-minute authorization window, future-time rejection, and session/user/source binding.
-- Embedded native HTML, CSS, and JavaScript Mini App with Simplified Chinese and English text, Telegram theme variables, touch interaction, and no frontend build chain.
-- Same-origin verification page and API with strict JSON limits, per-session/client rate boundaries, no-store responses, and security headers.
-- Telegram Long Polling with an explicit `allowed_updates` list.
-- A narrow extended update decoder and raw Bot API adapter for Guard `query_id`, `sendChatJoinRequestWebApp`, and `answerChatJoinRequestQuery`; supported standard methods still use `github.com/go-telegram/bot`.
-- Guard Mini App, ordinary join-request private verification, and direct-join restriction flows with source-key idempotence and restart recovery.
-- Fixed-deadline expiry scanning, 30-day re-entry trust, current-default-permission restoration, and recent-member state initialization.
-- One forum management topic per managed group with 30-minute manual review, approve-once, approve-and-trust, decline, and ban actions.
-- Real-time owner/source-administrator authorization, transactional decision claiming, non-permanent direct-member kicks, and permanent bans only for the explicit ban action.
-- Normal and edited message moderation for text and media captions, including correct Telegram UTF-16 entity slicing, `url` and `text_link` handling, normalized Unicode, full-width ASCII, invisible controls, sanitized domains, and external `sender_chat` identity.
-- HMAC-SHA-256 content fingerprints derived from the Bot Token in memory; message text, captions, full URLs, forward details, and secrets are not persisted or copied to management topics.
-- Explainable recent-link, Telegram-promotion, obfuscated-link, mention, message/media-rate, self-repeat, coordinated-repeat, and recent-forward/media rules with rolling 24-hour scores.
-- Transactional 3/5/8/12 punishment escalation: delete and warn, 10-minute mute, 24-hour mute, then permanent ban. Raid-only weight cannot create a permanent-ban score.
-- Recoverable SQLite moderation actions with unique keys, atomic claims, failure retry, current-administrator checks, concise group notices, audit events, and sanitized management-topic logs.
-- Group allowlists and blocklists, owner/current-source-administrator daily punishment commands, and explicit blocklist rejection at the front of all join paths.
-- Per-group automatic/forced-on/forced-off Raid state, 12 joins in 60 seconds and coordinated-repeat triggers, simple verification-failure/punishment counters, one-time transition notices, and a 15-minute quiet exit.
-- Owner-only join-request invite creation, safe listing, and idempotent revocation. Full links are delivered only in the owner's private chat and stored only as Bot-Token-derived AES-256-GCM ciphertext with a keyed fingerprint.
-- Non-replayable invitation creation and recoverable revocation state in SQLite, including private-delivery preflight, automatic revocation after delivery failure, limited retry, and explicit indeterminate results after an ambiguous create.
-- Startup and daily batched retention cleanup for terminal verification, review, join, moderation, Raid, and audit data while preserving active or retryable work.
-- Hardened systemd, Nginx, Caddy, Cloudflare Tunnel, backup, restore, upgrade, rollback, and troubleshooting guidance.
-- Private `/start`, deep-link `/start verify_...`, owner-only `/tadmin status`, and idempotent owner-only `/tadmin setup` onboarding.
-- `GET /healthz` with no configuration or secret disclosure.
-- CGO-free Linux amd64 and arm64 release builds with SHA-256 checksums.
+## 首版范围
 
-## Requirements
+- 单 Go 进程、SQLite、Long Polling；不需要 Redis、外部数据库或本地 Bot API Server。
+- 服务端生成 3×3 PNG 图形验证码，按顺序点击两个目标；答案不下发到页面。
+- 校验 Telegram `initData` 签名、有效期、用户与会话绑定；提交只能成功一次。
+- 支持验证中重启、外部动作失败重试、持久化更新偏移和同一数据库的单实例锁。
+- 审核卡与结果默认发到所有者私聊，无需额外管理群；可选配置已有群作为共享目的地，卡片仍绑定保存的聊天与消息 ID。
+- 所有者通过机器人私聊按明确群 ID 接入、查看和调整验证时间；中英文提示。
+- Docker Compose 和单二进制 + systemd 两种部署，复用宿主机 Nginx 的 HTTPS。
+- 现有 Guard / 普通入群申请作为兼容入口保留；不要求开启审批制或设置 Guard。
 
-- Go 1.26.5 or a compatible Go 1.26.x toolchain.
-- GNU Make plus `sha256sum` for release builds.
-- A Telegram Bot Token for live startup. A real token and group are not needed for unit tests or cross-compilation.
+直接入群验证针对普通用户账号；配置中的所有者、当前群管理员和 Telegram 标记的机器人账号不触发验证码。人工批准是有权限管理员作出的显式例外。普通用户退群再加入默认重新验证，不默认启用 30 天免验证。
 
-## Configuration
+首版运行时不分析成员消息，不启用广告评分、图片识别、刷屏处罚、Raid、外部频道身份封禁或邀请管理。历史相关包和数据库迁移保留，但不连接到运行入口。通过验证码不代表以后不会发垃圾消息；验证码也不保证阻止人工操作或专门识别图像的脚本。
 
-Copy `config.example.toml` to an untracked `config.toml`, then replace the example owner ID:
+## 构建与离线检查
 
-```sh
-cp config.example.toml config.toml
-export TADMIN_BOT_TOKEN='replace-with-a-test-token'
-```
-
-The token must never be written into TOML, source files, Git, or command output. `public_base_url` may remain empty for tests and offline development, but `/tadmin setup` refuses to enable a group until it is an absolute HTTPS URL. Setup also requires `management_chat_id` to identify a forum-enabled management supergroup. The HTTP listener remains restricted to a loopback address such as `127.0.0.1:8080`.
-
-Validate the binary version without a config file or token:
-
-```sh
-go run ./cmd/tadmin --version
-```
-
-Start the bot after configuring the environment:
-
-```sh
-go run ./cmd/tadmin --config config.toml
-```
-
-## Telegram commands
-
-- Private `/start` returns a short description and version.
-- Private `/start verify_{token}` validates the bound user and opens the existing Mini App session; it is used as the direct-join group-message fallback.
-- `/tadmin status` is owner-only and reports uptime, database health, Join Request Query capability, and enabled managed-group count.
-- `/tadmin setup` is owner-only and must be run in the source supergroup. It checks source and management-group permissions, creates or reuses one management topic, proves it can send and edit there, and only then enables join verification.
-- `/tadmin allow add <user_id>` and `/tadmin allow remove <user_id>` are owner-only.
-- `/tadmin block add <user_id>` and `/tadmin block remove <user_id>` are owner-only. The latest explicit add wins; if legacy/conflicting rows exist, block takes precedence until changed.
-- `/tadmin raid auto|on|off` and `/tadmin moderation status` are owner-only and operate on the current managed supergroup.
-- `/tadmin invite create <name>`, `/tadmin invite list`, and `/tadmin invite revoke <public_id>` are owner-only and operate on the current enabled managed supergroup. Creation always requests administrator approval; a complete invite URL is never posted to the group.
-- `/tadmin warn`, `/tadmin mute 10m`, `/tadmin mute 24h`, `/tadmin kick`, and `/tadmin ban` accept a replied-to user or an explicit user ID. The owner and current source-group administrators may use them; anonymous administrators are rejected.
-
-## Verification HTTP surface
-
-Sessions are created only by the internal Go join service; there is no public test-session or bypass route. The embedded HTTP service exposes:
-
-```text
-GET  /verify/{session_token}
-POST /api/verify/{session_token}/open
-GET  /api/verify/{session_token}/image/{generation}.png
-POST /api/verify/{session_token}/answer
-```
-
-The two POST routes accept only `application/json`. Telegram `initData` is carried in the request body, never in a URL. The browser receives the rendered PNG and a human-readable prompt but never receives cell semantics, target indices, or the correct order as structured data.
-
-## Join and review behavior
-
-- A Guard query opens the HTTPS Mini App immediately. A successful challenge answers `approve`; initialization failure, challenge failure, or expiry answers `queue` and creates one review item.
-- An ordinary join request immediately uses its short-lived `user_chat_id` private channel. It is approved only after success; delivery failure, challenge failure, or expiry goes to review.
-- A directly joined non-admin member is restricted before a session is delivered. Private Web App delivery is preferred, an ephemeral group hint is optional, and a normal group URL deep link is the reliable fallback. Success restores the current group permissions returned by `getChat`.
-- Review authorization is checked against the global owner or the source group's current Telegram administrators for every callback. A pending review times out after 30 minutes: applications are declined and directly joined members are banned then unbanned so they may apply again.
-
-The join coordinator persists source keys, current Telegram actions, review deadlines, and card IDs. It scans SQLite for fixed-deadline expirations and pending/processing work after restart; no Redis, queue, or event bus is used.
-
-## Moderation and Raid behavior
-
-Recent membership means both `now < recent_until` and fewer than three normal messages. A low-risk, unpunished normal message advances that counter; the fixed 24-hour deadline is never extended. Users without a member-state row are treated as established members, so an established member's ordinary external link receives no score by itself.
-
-Default deterministic rules are:
-
-- recent external link: +1;
-- recent Telegram promotion: +3; established batch promotion: +2;
-- obfuscated or mismatched link: +2;
-- 5 distinct mentions: +2; 10 distinct mentions: +3;
-- 6 messages in 10 seconds: +3;
-- 3 recent-member media/forward messages in 30 seconds: +2;
-- same-user repeat in 60 seconds: +3;
-- the same digest from 3 recent members in 5 minutes: +5 and a strong Raid signal;
-- an immediate recent-member forward or promotional media message: +1.
-
-Automatic Raid also enters at 12 join cases in 60 seconds, 6 verification failures in 5 minutes, or punishments of 4 distinct recent members in 5 minutes. While active, it adds one point to each already-matched recent-member rule; it never creates risk for a normal message, changes challenge attempts/deadlines/review behavior, manages invitations, or supplies points needed for a permanent ban. `forced_on` never exits automatically, `forced_off` still records signals, and `auto` exits after 15 quiet minutes.
-
-## Invitation security and retention
-
-Invitation creation first proves that the owner can receive a private message. TAdmin then creates an additional Telegram link with `creates_join_request=true`, encrypts it before persistence, sends the complete link only to the owner, and posts only its safe local identifier to the source group. A repeated Telegram update cannot create or deliver a second link. If final private delivery fails, revocation begins immediately.
-
-The encryption and fingerprint keys are separately derived from `TADMIN_BOT_TOKEN`. Rotating that Token means existing active links can no longer be decrypted for automated revocation; follow the rotation procedure in [docs/operations.md](docs/operations.md).
-
-Retention runs at startup and every 24 hours using transactions of at most 500 deletions. Terminal verification sessions are retained for 24 hours; completed operational history is retained for 30 days. Pending, processing, failed, active, and otherwise retryable state is preserved. TAdmin never runs automatic `VACUUM`.
-
-## Production deployment
-
-The shortest production path is:
-
-1. install the matching binary as `/usr/local/bin/tadmin`;
-2. keep TOML in `/etc/tadmin/config.toml` and the Bot Token only in `/etc/tadmin/tadmin.env`;
-3. store SQLite under `/var/lib/tadmin`;
-4. install [deploy/systemd/tadmin.service](deploy/systemd/tadmin.service);
-5. expose only `/verify/` and `/api/verify/` through the supplied [Nginx](deploy/nginx/tadmin.conf) or [Caddy](deploy/caddy/Caddyfile) example;
-6. confirm `http://127.0.0.1:8080/healthz`, then run `/tadmin setup` in each source group.
-
-See [docs/deployment.md](docs/deployment.md) for installation and HTTPS setup, and [docs/operations.md](docs/operations.md) for retention, backup, restore, upgrade, rollback, Token rotation, logs, and troubleshooting.
-
-## Verification and release
+需要 Go 1.27.x（模块最低 1.27.0；交付构建使用 1.27.1）、GNU Make、`sha256sum`。
 
 ```sh
 go test ./...
+go test -race ./...
 go vet ./...
-make release
+go mod verify
+make release VERSION=v0.1.0-rc.1
+(cd dist && sha256sum -c SHA256SUMS)
+./dist/tadmin-linux-amd64 --version
 ```
 
-Release files are written to `dist/`:
+配置见 [config.example.toml](config.example.toml)。Bot Token 只从环境变量 `TADMIN_BOT_TOKEN` 读取。`--check` 会验证配置并初始化/检查 SQLite，不连接 Telegram；会创建数据库及 `.lock` 文件，不能与使用同一数据库的运行实例同时执行。
+
+```sh
+TADMIN_BOT_TOKEN=123:offline-check ./dist/tadmin-linux-amd64 --config config.toml --check
+```
+
+此处合成 Token 仅用于离线检查，不能用于实际启动。不要把真实 Token 写进配置、提交或对话。
+
+本机文件分工：`tadmin.env` 保存 `TADMIN_BOT_TOKEN`（模板见 [tadmin.env.example](tadmin.env.example)）；`config.toml` 保存 `owner_user_id`、`database_path` 和 `public_base_url`。监听地址、语言和审核目的地可省略，分别默认回环地址 `127.0.0.1:8080`、`zh-CN`、所有者私聊。二进制不会自动加载 env 文件，部署时由 systemd/Compose 提供环境变量。
+
+`TADMIN_TEST_CHAT_ID` 只是可选的人工 API 核查参数，不是启动配置，也不会自动启用该群；正式接入使用 `/tadmin setup <群ID>`。不需要填写 `TADMIN_TEST_USER_ID`，当前程序和仓库脚本均不读取它。
+
+
+## Telegram 管理命令
+
+把机器人加入要管理的群并授予所需权限，再与机器人私聊点击 Start：
 
 ```text
-tadmin-linux-amd64
-tadmin-linux-arm64
-SHA256SUMS
+/start
+/help
+/tadmin status
+/tadmin groups
+/tadmin setup -1001234567890
+/tadmin timeout -1001234567890 180
 ```
 
-These artifacts are stage 5 release candidates, not the final v0.1.0 release. The complete frozen requirements and phase boundaries are recorded in `docs/requirements.md`; current implementation and the stage 6 live acceptance checklist are in `docs/progress.md`.
+群 ID 为示例，需换成自己的来源群 ID。`timeout` 支持 30–900 秒，只影响之后创建的入群工作。在来源群中可直接执行 `/tadmin setup`、`/tadmin timeout 180`，只有配置中的所有者有权执行。
+
+审核卡默认只发给所有者。需要其他管理员共同审核时，可选配置已有群作为共享目的地，也可以使用来源群本身；能看到卡片不代表有权操作，仍需全局所有者或来源群当前管理员身份。匿名命令无法确认真人身份，因此拒绝执行。
+
+## 部署与使用前提
+
+- 来源群必须是无话题 `supergroup`。不需要创建额外群。
+- 来源群机器人需要管理员身份及限制成员、处理申请权限；默认审核私聊要求所有者先点击 Start。如配置可选日志群，只检查可访问和发送/编辑自己消息的能力，不要求额外管理员权限。
+- 频道关联讨论群须开启“加入后才能发言”。频道评论串不是论坛话题，不会被当作论坛拒绝。
+- 不启用助推用户绕过群发言权限；接入会检查此条件。
+- 使用专门的 HTTPS 域名根路径，例如 `https://verify.example.com`，不支持 `/tadmin` 子路径部署。
+- 验证窗口通过私聊的 Web App 按钮打开；未启动过机器人或拒收私聊者使用来源群中的私聊深链。
+- 机器人在线后才能处理加入事件；从成员进入到机器人限制生效之间存在平台投递/网络延迟，不能承诺“第一条消息绝不可能发出”。
+
+完整步骤见 [部署文档](docs/deployment.md)，模板包括 [Compose](compose.yaml)、[systemd](deploy/systemd/tadmin.service)、[Nginx](deploy/nginx/tadmin.conf)。[Caddy 模板](deploy/caddy/Caddyfile) 作为可选反向代理示例保留。
+
+维护、备份、恢复、Token 轮换见 [运维文档](docs/operations.md)；产品边界见 [需求文档](docs/requirements.md)；官方契约、测试证据及真实 API 验收见 [验证文档](docs/verification.md)。[历史进度](docs/progress.md) 中旧版群管能力与旧测试结论不代表当前首版范围。
