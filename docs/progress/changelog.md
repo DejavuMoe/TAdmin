@@ -35,4 +35,10 @@ TAdmin 2 是一次彻底重写。旧版本只做“入群验证码”，依赖 H
 
 - Bot API 10.x 临时消息与 Guard 在真实客户端上的表现。
 - @WebpageBot 的真实回复措辞、gotd 扫码登录。
-- Docker 镜像构建（开发机的 Docker Hub 凭据异常，未能拉取基础镜像）。
+- 用真实 Token 执行 `docker compose up` 的整机验收（镜像本身已构建并通过冒烟测试）。
+- Forgejo Actions 工作流在真实 Runner 上的首次运行。
+
+### 工程
+
+- 新增 Forgejo Actions：gofmt、`go vet`、`-race` 测试、docgen 过期检查、文档站构建；推送 `v*` 标签时产出 linux amd64 / arm64 二进制与 `SHA256SUMS`。
+- 仓库统一 LF 换行（`.gitattributes`），Docker 构建上下文排除 `node_modules` 与文档。

@@ -10,3 +10,8 @@ dist
 *.db
 *.db-*
 *.log
+.agents
+.forgejo
+node_modules
+docs
+*.md

@@ -46,6 +46,17 @@ go run ./cmd/docgen -check   # 只检查是否过期（适合 CI）
 
 它还会核对 Mini App 前端的点击网格与 Go 渲染器的布局常量是否一致。
 
+## 持续集成
+
+`.forgejo/workflows/ci.yml` 在每次推送与合并请求时运行两个任务：
+
+| 任务 | 内容 |
+|---|---|
+| `go` | `gofmt` 检查 → `go vet` → `docgen -check` → `go test -race` |
+| `docs` | `pnpm install --frozen-lockfile` → `pnpm docs:build`，产物作为构件上传 |
+
+推送 `v*` 标签时额外运行 `release`：`make release` 交叉编译 linux amd64 / arm64 静态二进制并生成 `SHA256SUMS`。
+
 ## 本地预览文档站
 
 文档站是仓库根目录 pnpm 工作区中的 `docs` 包（VitePress）：

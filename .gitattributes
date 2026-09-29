@@ -1,3 +1,5 @@
-# Generated documentation data is compared byte-for-byte by internal/docgen.
-docs/.vitepress/data/generated/*.json text eol=lf
+# Keep LF in the repository and in every checkout: the tree is built on Linux
+# (Docker, WSL mirror) and generated docs data is compared byte-for-byte.
+* text=auto eol=lf
 *.png binary
+*.ico binary

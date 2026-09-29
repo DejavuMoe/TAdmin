@@ -121,9 +121,9 @@ type cooldownStep struct {
 }
 
 type verifyOut struct {
-	Cooldown   []cooldownStep   `json:"cooldown"`
-	MinBan     int64            `json:"min_ban_seconds"`
-	Geometry   captcha.Geometry `json:"geometry"`
+	Cooldown   []cooldownStep    `json:"cooldown"`
+	MinBan     int64             `json:"min_ban_seconds"`
+	Geometry   captcha.Geometry  `json:"geometry"`
 	BlindGuess map[string]string `json:"blind_guess"`
 }
 
@@ -379,17 +379,17 @@ func loadProgress(root string, tests testsOut) (progressOut, error) {
 // ---- meta ----
 
 type metaOut struct {
-	Version     string            `json:"version"`
-	Updated     string            `json:"updated"`
-	GoVersion   string            `json:"go_version"`
-	Toolchain   string            `json:"toolchain"`
-	Deps        []string          `json:"deps"`
-	Counts      map[string]int    `json:"counts"`
-	Packages    []string          `json:"packages"`
-	Delivery    []string          `json:"delivery"`
-	Kinds       []string          `json:"kinds"`
-	Languages   []string          `json:"languages"`
-	Sources     map[string]string `json:"sources"`
+	Version   string            `json:"version"`
+	Updated   string            `json:"updated"`
+	GoVersion string            `json:"go_version"`
+	Toolchain string            `json:"toolchain"`
+	Deps      []string          `json:"deps"`
+	Counts    map[string]int    `json:"counts"`
+	Packages  []string          `json:"packages"`
+	Delivery  []string          `json:"delivery"`
+	Kinds     []string          `json:"kinds"`
+	Languages []string          `json:"languages"`
+	Sources   map[string]string `json:"sources"`
 }
 
 var requireRe = regexp.MustCompile(`(?m)^\t([\w./-]+) (v[\w.+-]+)$`)
@@ -454,7 +454,6 @@ func goPackages(root string) ([]string, error) {
 	sort.Strings(out)
 	return out, err
 }
-
 
 // Stale lists generated files whose on-disk content differs. Text files are
 // compared with line endings normalized (Git may check them out as CRLF).

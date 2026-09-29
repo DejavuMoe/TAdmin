@@ -1,0 +1,57 @@
+name: ci
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+
+jobs:
+  go:
+    runs-on: docker
+    # node:*-bookworm is buildpack-deps based: it has gcc for -race and node
+    # for the JavaScript actions.
+    container:
+      image: node:24-bookworm
+    steps:
+      - uses: https://code.forgejo.org/actions/checkout@v4
+      - uses: https://code.forgejo.org/actions/setup-go@v5
+        with:
+          go-version: '1.27.1'
+      - name: gofmt
+        run: test -z "$(gofmt -l cmd internal assets)" || { gofmt -l cmd internal assets; exit 1; }
+      - run: go vet ./...
+      - name: docs data is up to date
+        run: go run ./cmd/docgen -check
+      - run: CGO_ENABLED=1 go test -race ./...
+
+  docs:
+    runs-on: docker
+    container:
+      image: node:24-bookworm
+    steps:
+      - uses: https://code.forgejo.org/actions/checkout@v4
+      - run: npm install -g pnpm@12.5.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm docs:build
+      - uses: https://code.forgejo.org/actions/upload-artifact@v3
+        with:
+          name: docs-site
+          path: docs/.vitepress/dist
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [go, docs]
+    runs-on: docker
+    container:
+      image: node:24-bookworm
+    steps:
+      - uses: https://code.forgejo.org/actions/checkout@v4
+      - uses: https://code.forgejo.org/actions/setup-go@v5
+        with:
+          go-version: '1.27.1'
+      - run: make release VERSION=${{ github.ref_name }}
+      - uses: https://code.forgejo.org/actions/upload-artifact@v3
+        with:
+          name: tadmin-${{ github.ref_name }}
+          path: dist/
