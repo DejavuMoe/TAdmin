@@ -1,0 +1,206 @@
+[
+  {
+    "key": "verify",
+    "title": "🔐 入群验证",
+    "fields": [
+      {
+        "key": "enabled",
+        "type": "bool",
+        "default": true,
+        "desc": "是否对新成员启用入群验证"
+      },
+      {
+        "key": "delivery",
+        "type": "string",
+        "default": "overlay",
+        "desc": "投递方式：overlay 浮层 / public 群内 / private 私聊"
+      },
+      {
+        "key": "kind",
+        "type": "string",
+        "default": "image",
+        "desc": "题型：image 图形点选 / math 图片算术 / button 一键确认"
+      },
+      {
+        "key": "timeout",
+        "type": "int",
+        "default": 180,
+        "desc": "答题时限（秒）"
+      },
+      {
+        "key": "attempts",
+        "type": "int",
+        "default": 3,
+        "desc": "可尝试次数"
+      },
+      {
+        "key": "on_fail",
+        "type": "string",
+        "default": "kick",
+        "desc": "次数用尽后：kick 移出 / review 转人工审核"
+      },
+      {
+        "key": "cooldown",
+        "type": "bool",
+        "default": true,
+        "desc": "失败移出时是否递增冷却"
+      },
+      {
+        "key": "requests",
+        "type": "bool",
+        "default": true,
+        "desc": "是否处理入群申请（审批制群）"
+      },
+      {
+        "key": "webapp",
+        "type": "bool",
+        "default": true,
+        "desc": "配置了 Mini App 时是否提供大图验证按钮"
+      },
+      {
+        "key": "cas",
+        "type": "bool",
+        "default": false,
+        "desc": "是否查询 CAS 公共黑名单"
+      },
+      {
+        "key": "ai",
+        "type": "string",
+        "default": "off",
+        "desc": "AI 资料风险：off 关闭 / hint 仅提示 / review 高风险转人工"
+      },
+      {
+        "key": "review_ttl",
+        "type": "int",
+        "default": 900,
+        "desc": "人工审核等待时长（秒）"
+      }
+    ]
+  },
+  {
+    "key": "welcome",
+    "title": "👋 欢迎语",
+    "fields": [
+      {
+        "key": "enabled",
+        "type": "bool",
+        "default": false,
+        "desc": "通过验证后发送欢迎语"
+      },
+      {
+        "key": "text",
+        "type": "string",
+        "default": "",
+        "desc": "欢迎语模板；空值使用默认文案"
+      },
+      {
+        "key": "buttons",
+        "type": "string",
+        "default": "",
+        "desc": "链接按钮，每行一排：文字 - https://…，同排用 | 分隔"
+      },
+      {
+        "key": "ephemeral",
+        "type": "bool",
+        "default": true,
+        "desc": "欢迎语是否仅新人本人可见"
+      },
+      {
+        "key": "delete_after",
+        "type": "int",
+        "default": 300,
+        "desc": "自动删除延时（秒，0 表示不删除）"
+      }
+    ]
+  },
+  {
+    "key": "channel",
+    "title": "📢 频道联动",
+    "fields": [
+      {
+        "key": "unpin",
+        "type": "string",
+        "default": "off",
+        "desc": "频道自动置顶：off 保持 / unpin 立即取消 / keep_latest 只保留最新一条"
+      },
+      {
+        "key": "block_masks",
+        "type": "bool",
+        "default": false,
+        "desc": "删除以其他频道身份发送的消息并封禁该频道身份"
+      }
+    ]
+  },
+  {
+    "key": "clean",
+    "title": "🧹 消息清理",
+    "fields": [
+      {
+        "key": "join",
+        "type": "bool",
+        "default": true,
+        "desc": "删除“加入群组”服务消息"
+      },
+      {
+        "key": "leave",
+        "type": "bool",
+        "default": true,
+        "desc": "删除“离开群组”服务消息"
+      },
+      {
+        "key": "pin",
+        "type": "bool",
+        "default": false,
+        "desc": "删除“置顶了消息”服务消息"
+      },
+      {
+        "key": "other",
+        "type": "bool",
+        "default": false,
+        "desc": "删除改名、头像、语音通话等服务消息"
+      },
+      {
+        "key": "commands",
+        "type": "bool",
+        "default": true,
+        "desc": "自动删除管理员命令与机器人的回复"
+      }
+    ]
+  },
+  {
+    "key": "raid",
+    "title": "🛡 突击防护",
+    "fields": [
+      {
+        "key": "threshold",
+        "type": "int",
+        "default": 10,
+        "desc": "突击防护阈值（每分钟入群人数，0 表示关闭）"
+      },
+      {
+        "key": "minutes",
+        "type": "int",
+        "default": 15,
+        "desc": "防护持续分钟数"
+      }
+    ]
+  },
+  {
+    "key": "",
+    "title": "通用",
+    "fields": [
+      {
+        "key": "lang",
+        "type": "string",
+        "default": "",
+        "desc": "群内语言；空值表示跟随全局 language"
+      },
+      {
+        "key": "kick_bots",
+        "type": "bool",
+        "default": true,
+        "desc": "移除由非管理员拉入的机器人账号"
+      }
+    ]
+  }
+]

@@ -1,26 +1,26 @@
+# TAdmin — docker compose up -d
+# 1) cp tadmin.env.example tadmin.env   2) 填写 TADMIN_BOT_TOKEN 与 TADMIN_OWNER_ID
 services:
   tadmin:
     build:
       context: .
       args:
-        VERSION: v0.1.0-rc.1
-    image: tadmin:v0.1.0-rc.1
+        VERSION: v2.0.0
+    image: tadmin:v2.0.0
     restart: unless-stopped
-    # Linux host networking keeps the same loopback-only backend as systemd.
-    # Nginx runs on the host. Do not add ports or bind the app to 0.0.0.0.
-    network_mode: host
-    env_file:
-      - path: ./tadmin.env
-        format: raw
+    env_file: ./tadmin.env
     volumes:
-      - ./config.docker.toml:/etc/tadmin/config.toml:ro
-      - tadmin-data:/var/lib/tadmin
+      - tadmin-data:/data
+      # 可选：挂载配置文件（环境变量已足够时可省略）
+      # - ./config.toml:/etc/tadmin/config.toml:ro
+    # Mini App（可选）只绑定到本机回环地址，由宿主机上的 Nginx/Caddy 提供 HTTPS。
+    ports:
+      - "127.0.0.1:8080:8080"
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
-    pids_limit: 128
+    pids_limit: 256
     mem_limit: 256m
-    cpus: 1.0
     stop_grace_period: 20s
     logging:
       driver: json-file

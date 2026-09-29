@@ -1,0 +1,130 @@
+{
+  "en": {
+    "private": [
+      {
+        "command": "start",
+        "description": "Open the control panel"
+      },
+      {
+        "command": "panel",
+        "description": "Open the control panel"
+      },
+      {
+        "command": "refresh",
+        "description": "Refresh link previews: /refresh URL"
+      },
+      {
+        "command": "backup",
+        "description": "Back up the database"
+      },
+      {
+        "command": "help",
+        "description": "Help"
+      }
+    ],
+    "admins": [
+      {
+        "command": "settings",
+        "description": "Open this group's settings privately",
+        "is_ephemeral": true
+      },
+      {
+        "command": "status",
+        "description": "Show verification status",
+        "is_ephemeral": true
+      },
+      {
+        "command": "pass",
+        "description": "Approve a verifying member (reply or ID)"
+      },
+      {
+        "command": "kick",
+        "description": "Kick a member (reply)"
+      },
+      {
+        "command": "ban",
+        "description": "Ban a member, optional duration like 7d (reply)"
+      },
+      {
+        "command": "mute",
+        "description": "Mute a member, default 1h (reply)"
+      },
+      {
+        "command": "unmute",
+        "description": "Unmute a member (reply)"
+      },
+      {
+        "command": "unban",
+        "description": "Unban (reply or ID)"
+      },
+      {
+        "command": "unpin",
+        "description": "Unpin all channel posts"
+      }
+    ]
+  },
+  "zh-CN": {
+    "private": [
+      {
+        "command": "start",
+        "description": "打开控制台"
+      },
+      {
+        "command": "panel",
+        "description": "打开控制台"
+      },
+      {
+        "command": "refresh",
+        "description": "刷新链接预览：/refresh 链接"
+      },
+      {
+        "command": "backup",
+        "description": "备份数据库"
+      },
+      {
+        "command": "help",
+        "description": "使用帮助"
+      }
+    ],
+    "admins": [
+      {
+        "command": "settings",
+        "description": "在私聊中打开本群设置",
+        "is_ephemeral": true
+      },
+      {
+        "command": "status",
+        "description": "查看本群验证状态",
+        "is_ephemeral": true
+      },
+      {
+        "command": "pass",
+        "description": "放行正在验证的成员（回复或 ID）"
+      },
+      {
+        "command": "kick",
+        "description": "移出成员（回复）"
+      },
+      {
+        "command": "ban",
+        "description": "封禁成员，可加时长如 7d（回复）"
+      },
+      {
+        "command": "mute",
+        "description": "禁言成员，默认 1h，可写 10m/2h/1d（回复）"
+      },
+      {
+        "command": "unmute",
+        "description": "解除禁言（回复）"
+      },
+      {
+        "command": "unban",
+        "description": "解除封禁（回复或 ID）"
+      },
+      {
+        "command": "unpin",
+        "description": "一键取消频道置顶"
+      }
+    ]
+  }
+}

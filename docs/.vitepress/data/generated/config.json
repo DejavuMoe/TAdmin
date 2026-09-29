@@ -1,0 +1,104 @@
+{
+  "env": [
+    {
+      "name": "TADMIN_BOT_TOKEN",
+      "group": "required",
+      "desc": "Bot Token（@BotFather 获取）。只能通过环境变量提供，不会写入配置文件或日志。",
+      "example": "123456:ABC-DEF…",
+      "secret": true,
+      "required": true
+    },
+    {
+      "name": "TADMIN_BOT_TOKEN_FILE",
+      "group": "required",
+      "desc": "从文件读取 Bot Token，适合 Docker secrets / systemd credentials；仅在未设置 TADMIN_BOT_TOKEN 时生效。",
+      "example": "/run/secrets/tadmin_token",
+      "secret": true
+    },
+    {
+      "name": "TADMIN_OWNER_ID",
+      "toml": "owner_id",
+      "group": "required",
+      "desc": "所有者的 Telegram 数字 ID（@userinfobot 可查），拥有全部权限。",
+      "example": "123456789",
+      "required": true
+    },
+    {
+      "name": "TADMIN_DATA_DIR",
+      "toml": "data_dir",
+      "group": "core",
+      "desc": "数据目录，存放 tadmin.db（含 WAL 文件）与单实例锁。默认 data；Docker 镜像内为 /data。",
+      "example": "/var/lib/tadmin"
+    },
+    {
+      "name": "TADMIN_TIMEZONE",
+      "toml": "timezone",
+      "group": "core",
+      "desc": "统计按天划分与时间显示使用的时区（二进制内置时区数据库）。",
+      "example": "Asia/Shanghai"
+    },
+    {
+      "name": "TZ",
+      "group": "core",
+      "desc": "标准时区变量；仅在未设置 TADMIN_TIMEZONE 且配置为 Local 时作为回退。",
+      "example": "Asia/Shanghai"
+    },
+    {
+      "name": "TADMIN_LANGUAGE",
+      "toml": "language",
+      "group": "core",
+      "desc": "默认语言：zh-CN 或 en。每个群还可以在控制台单独设置。",
+      "example": "zh-CN"
+    },
+    {
+      "name": "TADMIN_PUBLIC_URL",
+      "toml": "web.public_url",
+      "group": "web",
+      "desc": "可选。反向代理后的 HTTPS 源（不带路径）；配置后启用 Mini App 大图验证与 Guard 零窗口入群。",
+      "example": "https://verify.example.com"
+    },
+    {
+      "name": "TADMIN_LISTEN",
+      "toml": "web.listen",
+      "group": "web",
+      "desc": "HTTP 监听地址，提供 /healthz 与 Mini App。默认 127.0.0.1:8080；容器内为 0.0.0.0:8080。",
+      "example": "127.0.0.1:8080"
+    },
+    {
+      "name": "TADMIN_API_ID",
+      "toml": "userbot.api_id",
+      "group": "userbot",
+      "desc": "可选。预览刷新用户号的 api_id（my.telegram.org 申请）。",
+      "example": "1234567"
+    },
+    {
+      "name": "TADMIN_API_HASH",
+      "toml": "userbot.api_hash",
+      "group": "userbot",
+      "desc": "可选。与 api_id 配对的 api_hash。",
+      "example": "0123456789abcdef…",
+      "secret": true
+    },
+    {
+      "name": "TADMIN_TYPESAFE_API_KEY",
+      "group": "ai",
+      "desc": "可选。TypeSafe Jev API Key，启用 AI 入群资料风险提示（只升级处理，绝不自动放行或封禁）。",
+      "example": "ts_…",
+      "secret": true
+    },
+    {
+      "name": "TADMIN_BOT_API_URL",
+      "toml": "bot_api_url",
+      "group": "advanced",
+      "desc": "可选。自建 Local Bot API Server 的地址；默认 https://api.telegram.org。",
+      "example": "http://127.0.0.1:8081"
+    },
+    {
+      "name": "TADMIN_CONFIG",
+      "group": "advanced",
+      "desc": "配置文件路径（等同 -config 参数），文件不存在时忽略。默认 config.toml。",
+      "example": "/etc/tadmin/config.toml"
+    }
+  ],
+  "sample": "# TAdmin 配置（可选文件；所有项都能用环境变量覆盖）\n# Bot Token 只从环境变量读取：TADMIN_BOT_TOKEN 或 TADMIN_BOT_TOKEN_FILE\n\nowner_id = 123456789          # 你的 Telegram 数字 ID（@userinfobot 可查）；环境变量 TADMIN_OWNER_ID\ndata_dir = \"data\"             # SQLite 数据目录；环境变量 TADMIN_DATA_DIR\nlanguage = \"zh-CN\"            # 默认语言：zh-CN / en\ntimezone = \"Asia/Shanghai\"    # 统计与日报使用的时区\nlog_format = \"json\"           # json / text\nlog_level = \"info\"\n# bot_api_url = \"http://127.0.0.1:8081\"   # 可选：自建 Local Bot API Server\n\n[web]\n# 可选：配置 HTTPS 域名后启用 Mini App 验证页与 Guard 零窗口入群。\n# public_url = \"https://verify.example.com\"\nlisten = \"127.0.0.1:8080\"\n\n[userbot]\n# 可选：预览刷新需要一个用户号（建议小号）。在 https://my.telegram.org 申请。\n# 登录在机器人私聊里扫码完成。api_hash 也可用环境变量 TADMIN_API_HASH。\n# api_id = 0\n# api_hash = \"\"\n\n[preview]\ncheck_interval = \"6h\"         # 订阅源检查间隔\nmin_gap = \"45s\"               # 两次刷新之间的最小间隔（另加随机抖动）\ndaily_limit = 300             # 每日最多刷新次数\nallow_private = false         # 是否允许抓取内网地址\n"
+}

@@ -1,0 +1,113 @@
+{
+  "geometry": {
+    "size": 540,
+    "margin": 15,
+    "gap": 12,
+    "cell": 162,
+    "n": 3
+  },
+  "samples": [
+    {
+      "kind": "image",
+      "image": "/samples/image-1.png",
+      "prompt_zh": "依次点击：六边形 1 → 六边形 3 → 心形 3",
+      "prompt_en": "Tap in order: hexagon 1 → hexagon 3 → heart 3",
+      "picks": 3,
+      "answer": [
+        6,
+        7,
+        8
+      ]
+    },
+    {
+      "kind": "image",
+      "image": "/samples/image-2.png",
+      "prompt_zh": "依次点击：三角形 2 → 六边形 8 → 星形 8",
+      "prompt_en": "Tap in order: triangle 2 → hexagon 8 → star 8",
+      "picks": 3,
+      "answer": [
+        3,
+        1,
+        2
+      ]
+    },
+    {
+      "kind": "image",
+      "image": "/samples/image-3.png",
+      "prompt_zh": "依次点击：方形 5 → 菱形 4 → 菱形 7",
+      "prompt_en": "Tap in order: square 5 → diamond 4 → diamond 7",
+      "picks": 3,
+      "answer": [
+        6,
+        5,
+        0
+      ]
+    },
+    {
+      "kind": "image",
+      "image": "/samples/image-4.png",
+      "prompt_zh": "依次点击：六边形 9 → 六边形 1 → 菱形 2",
+      "prompt_en": "Tap in order: hexagon 9 → hexagon 1 → diamond 2",
+      "picks": 3,
+      "answer": [
+        3,
+        1,
+        8
+      ]
+    },
+    {
+      "kind": "math",
+      "image": "/samples/math-1.png",
+      "prompt_zh": "请计算图中算式，选择正确答案",
+      "prompt_en": "Solve the expression in the image and pick the answer",
+      "options": [
+        "40",
+        "38",
+        "47",
+        "41",
+        "43",
+        "39"
+      ],
+      "picks": 1,
+      "answer": [
+        3
+      ]
+    },
+    {
+      "kind": "math",
+      "image": "/samples/math-2.png",
+      "prompt_zh": "请计算图中算式，选择正确答案",
+      "prompt_en": "Solve the expression in the image and pick the answer",
+      "options": [
+        "6",
+        "7",
+        "16",
+        "3",
+        "9",
+        "5"
+      ],
+      "picks": 1,
+      "answer": [
+        0
+      ]
+    },
+    {
+      "kind": "math",
+      "image": "/samples/math-3.png",
+      "prompt_zh": "请计算图中算式，选择正确答案",
+      "prompt_en": "Solve the expression in the image and pick the answer",
+      "options": [
+        "30",
+        "28",
+        "32",
+        "31",
+        "22",
+        "42"
+      ],
+      "picks": 1,
+      "answer": [
+        2
+      ]
+    }
+  ]
+}

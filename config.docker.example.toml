@@ -1,8 +1,0 @@
-owner_user_id = 123456789
-# Optional: omit to send review cards and logs to the owner private chat.
-# management_chat_id = -1001234567890
-# Replace the example Telegram IDs and HTTPS origin before live startup.
-database_path = "/var/lib/tadmin/tadmin.db"
-listen_address = "127.0.0.1:8080"
-public_base_url = "https://verify.example.com"
-default_language = "zh-CN"

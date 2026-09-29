@@ -1,0 +1,146 @@
+[
+  {
+    "method": "answerCallbackQuery",
+    "func": "AnswerCallback"
+  },
+  {
+    "method": "answerChatJoinRequestQuery",
+    "func": "AnswerJoinRequestQuery"
+  },
+  {
+    "method": "approveChatJoinRequest",
+    "func": "ApproveJoinRequest"
+  },
+  {
+    "method": "banChatMember",
+    "func": "BanChatMember"
+  },
+  {
+    "method": "banChatSenderChat",
+    "func": "BanChatSenderChat"
+  },
+  {
+    "method": "declineChatJoinRequest",
+    "func": "DeclineJoinRequest"
+  },
+  {
+    "method": "deleteEphemeralMessage",
+    "func": "DeleteEphemeral"
+  },
+  {
+    "method": "deleteMessage",
+    "func": "DeleteMessage"
+  },
+  {
+    "method": "deleteMessages",
+    "func": "DeleteMessages"
+  },
+  {
+    "method": "deleteWebhook",
+    "func": "DeleteWebhook"
+  },
+  {
+    "method": "editEphemeralMessageCaption",
+    "func": "EditEphemeralCaption"
+  },
+  {
+    "method": "editEphemeralMessageMedia",
+    "func": "EditEphemeralPhoto"
+  },
+  {
+    "method": "editEphemeralMessageReplyMarkup",
+    "func": "EditEphemeralReplyMarkup"
+  },
+  {
+    "method": "editEphemeralMessageText",
+    "func": "EditEphemeralText"
+  },
+  {
+    "method": "editMessageCaption",
+    "func": "EditMessageCaption"
+  },
+  {
+    "method": "editMessageMedia",
+    "func": "EditMessagePhoto"
+  },
+  {
+    "method": "editMessageReplyMarkup",
+    "func": "EditMessageReplyMarkup"
+  },
+  {
+    "method": "editMessageText",
+    "func": "EditMessageText"
+  },
+  {
+    "method": "getChat",
+    "func": "GetChat"
+  },
+  {
+    "method": "getChatAdministrators",
+    "func": "GetChatAdministrators"
+  },
+  {
+    "method": "getChatMember",
+    "func": "GetChatMember"
+  },
+  {
+    "method": "getChatMemberCount",
+    "func": "GetChatMemberCount"
+  },
+  {
+    "method": "getMe",
+    "func": "GetMe"
+  },
+  {
+    "method": "getUpdates",
+    "func": "GetUpdates"
+  },
+  {
+    "method": "getWebhookInfo",
+    "func": "GetWebhookInfo"
+  },
+  {
+    "method": "leaveChat",
+    "func": "LeaveChat"
+  },
+  {
+    "method": "pinChatMessage",
+    "func": "PinChatMessage"
+  },
+  {
+    "method": "restrictChatMember",
+    "func": "RestrictChatMember"
+  },
+  {
+    "method": "sendChatJoinRequestWebApp",
+    "func": "SendJoinRequestWebApp"
+  },
+  {
+    "method": "sendDocument",
+    "func": "SendDocument"
+  },
+  {
+    "method": "sendMessage",
+    "func": "SendMessage"
+  },
+  {
+    "method": "sendPhoto",
+    "func": "SendPhoto"
+  },
+  {
+    "method": "setMyCommands",
+    "func": "SetMyCommands"
+  },
+  {
+    "method": "unbanChatMember",
+    "func": "UnbanChatMember"
+  },
+  {
+    "method": "unpinAllChatMessages",
+    "func": "UnpinAllChatMessages"
+  },
+  {
+    "method": "unpinChatMessage",
+    "func": "UnpinChatMessage"
+  }
+]

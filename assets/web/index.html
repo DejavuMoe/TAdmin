@@ -1,51 +1,79 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="color-scheme" content="light dark">
-  <title>TAdmin</title>
-  <link rel="stylesheet" href="/verify/assets/app.css">
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="/verify/assets/app.js" defer></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="format-detection" content="telephone=no">
+<title>入群验证</title>
+<link rel="stylesheet" href="/assets/app.css">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="/assets/app.js" defer></script>
 </head>
 <body>
-  <main class="verify-shell" aria-labelledby="app-title">
-    <header class="topline">
-      <h1 id="app-title">TAdmin</h1>
-      <span id="state-label" class="state-label" aria-live="polite">连接中</span>
-    </header>
-
-    <section class="instruction" aria-labelledby="instruction-title">
-      <p id="instruction-title" class="eyebrow">入群验证</p>
-      <p id="prompt" class="prompt">正在安全地载入验证题目…</p>
-    </section>
-
-    <div id="challenge-frame" class="challenge-frame" hidden>
-      <img id="challenge-image" alt="3 × 3 随机交互验证图" draggable="false">
-      <div id="tap-markers" class="tap-markers" aria-hidden="true"></div>
+<div class="app" id="app" data-screen="loading">
+  <header class="top">
+    <div class="chip" id="chip" hidden>
+      <span class="chip-avatar" id="chip-avatar" aria-hidden="true"></span>
+      <span class="chip-title" id="chip-title"></span>
     </div>
+    <div class="timer" id="timer" role="timer" hidden>
+      <svg viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+        <circle class="timer-track" cx="22" cy="22" r="19"/>
+        <circle class="timer-bar" id="timer-bar" cx="22" cy="22" r="19"/>
+      </svg>
+      <span class="timer-text" id="timer-text" aria-hidden="true"></span>
+    </div>
+  </header>
 
-    <section class="progress" aria-label="验证进度">
-      <div class="step-block">
-        <span id="step-label" class="metric-label">当前步骤</span>
-        <div class="step-value">
-          <span id="step-dot-1" class="step-dot active"></span>
-          <span id="step-dot-2" class="step-dot"></span>
-          <span id="step-text">1 / 2</span>
-        </div>
-      </div>
-      <div>
-        <span id="time-label" class="metric-label">剩余时间</span>
-        <strong id="time-value" class="metric-value">--:--</strong>
-      </div>
-      <div>
-        <span id="attempt-label" class="metric-label">剩余尝试</span>
-        <strong id="attempt-value" class="metric-value">—</strong>
-      </div>
+  <main class="screens">
+    <section class="screen" data-for="loading" aria-busy="true">
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="muted" data-i18n="loading"></p>
     </section>
 
-    <p id="status-message" class="status-message" role="status" aria-live="polite">请稍候。</p>
+    <section class="screen" data-for="challenge" aria-labelledby="title">
+      <div class="heading">
+        <h1 class="title" id="title" data-i18n="title"></h1>
+        <div class="attempts" id="attempts"></div>
+      </div>
+      <div class="prompt" id="prompt"></div>
+
+      <div class="board" id="board">
+        <img class="board-img" id="board-img" alt="" draggable="false">
+        <div class="grid" id="grid" role="group"></div>
+        <div class="board-busy" aria-hidden="true"></div>
+      </div>
+
+      <div class="controls" id="controls">
+        <button type="button" class="ghost" id="undo">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+          <span data-i18n="undo"></span>
+        </button>
+        <span class="progress" id="progress" aria-live="polite"></span>
+        <button type="button" class="ghost" id="reset">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+          <span data-i18n="reset"></span>
+        </button>
+      </div>
+
+      <div class="options" id="options" role="group"></div>
+
+      <p class="toast" id="toast" role="status" aria-live="assertive"></p>
+
+      <button type="button" class="link" id="help" hidden data-i18n="help"></button>
+    </section>
+
+    <section class="screen" data-for="result" aria-live="polite">
+      <div class="result-icon" id="result-icon" aria-hidden="true"></div>
+      <h1 class="result-title" id="result-title" tabindex="-1"></h1>
+      <p class="result-text" id="result-text"></p>
+      <button type="button" class="primary" id="result-action"></button>
+    </section>
   </main>
+</div>
+<noscript><p class="noscript">请启用 JavaScript 以完成验证。Please enable JavaScript to verify.</p></noscript>
 </body>
 </html>

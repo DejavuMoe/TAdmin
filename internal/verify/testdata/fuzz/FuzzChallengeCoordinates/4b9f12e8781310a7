@@ -1,5 +1,0 @@
-go test fuzz v1
-float64(0.1)
-float64(0.1)
-float64(8.9)
-float64(0.9)

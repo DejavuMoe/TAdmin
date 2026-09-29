@@ -1,0 +1,231 @@
+{
+  "total": 151,
+  "packages": [
+    {
+      "package": "internal/preview/feeds",
+      "tests": [
+        "TestDiscoverNothing",
+        "TestDiscoverProbes",
+        "TestDiscoverRobotsAndHTML",
+        "TestDiscoverSourceItself",
+        "TestDiscoverTLSWithCustomClient",
+        "TestDiscoverUnreachable",
+        "TestFetchBlocksPrivateAddresses",
+        "TestFetchConditional",
+        "TestFetchGzip",
+        "TestFetchInvalidURL",
+        "TestFetchRedirects",
+        "TestFetchSizeLimit",
+        "TestFetchStatusError",
+        "TestIsBlockedIP",
+        "TestNormalizeURL",
+        "TestParseAtom",
+        "TestParseCharsets",
+        "TestParseDate",
+        "TestParseEntryCap",
+        "TestParseGzipMagic",
+        "TestParseHTML",
+        "TestParseHTMLLatin1Title",
+        "TestParseJSONFeed",
+        "TestParseRDF",
+        "TestParseRSS2",
+        "TestParseRobotsSitemaps",
+        "TestParseSitemap",
+        "TestParseSitemapIndex",
+        "TestParseSitemapNoNamespaceAndOddCase",
+        "TestParseUnsupported",
+        "TestWalkDepthLimit",
+        "TestWalkFeedAndErrors",
+        "TestWalkSitemapIndex"
+      ]
+    },
+    {
+      "package": "internal/gate",
+      "tests": [
+        "TestBotsAddedByMembersAreRemoved",
+        "TestCooldownSchedule",
+        "TestDirectJoinWhileRequestPendingIsVerified",
+        "TestExemptions",
+        "TestGuardExpiredQueryFallsBackToApprove",
+        "TestHelpGoesToReviewAndAdminApproves",
+        "TestJoinRequestFlow",
+        "TestJoinRequestUnreachableGoesToOwnerReview",
+        "TestLeaveAndRejoinDoesNotRestoreOwnMute",
+        "TestLeavingClosesWithoutBan",
+        "TestMissingRightsCancelsAndAlertsOwner",
+        "TestOverlayPassFlow",
+        "TestParseButtons",
+        "TestPausedChatSkipsNewcomers",
+        "TestPickToggleAndReset",
+        "TestPreservesEarlierAdminRestriction",
+        "TestPrivateDeliveryDeepLink",
+        "TestPromotedWhileVerifyingIsCancelled",
+        "TestPublicDelivery",
+        "TestRaidLockdown",
+        "TestReviewTimeoutRemoves",
+        "TestSchedulerRunsDueGates",
+        "TestServiceMessageFallbackDoesNotOverrideExemption",
+        "TestTimeoutRemoves",
+        "TestTransientFailureRetriesAndRecovers",
+        "TestUndeliverableReviewTimeoutLetsUserIn",
+        "TestWebAppFlow",
+        "TestWrongAnswersRemoveWithEscalatingCooldown"
+      ]
+    },
+    {
+      "package": "internal/bot",
+      "tests": [
+        "TestChannelAutoUnpinAndCleanKeepsAdminPins",
+        "TestChannelMaskBlocked",
+        "TestDemoChallenge",
+        "TestEntitiesToHTML",
+        "TestEntitiesToHTMLNesting",
+        "TestGroupCommands",
+        "TestMalformedCallbacksDoNotPanic",
+        "TestNonAdminCannotOpenGroupPanel",
+        "TestOwnerAddsGroupGetsSetupCard",
+        "TestPanelNavigationAndToggles",
+        "TestPendingChatCannotBeActivatedByStranger",
+        "TestPendingListNotLeakedToStrangers",
+        "TestServiceMessageCleanupAndGateEnforcement",
+        "TestSparklineAndDurations",
+        "TestStrangerAddsGroupNeedsAuthorization",
+        "TestWelcomeTextInputKeepsFormatting"
+      ]
+    },
+    {
+      "package": "internal/userbot",
+      "tests": [
+        "TestClassifyReply",
+        "TestCodeInfoFrom",
+        "TestFirstReply",
+        "TestManagerFloodPrecheck",
+        "TestManagerOffline",
+        "TestMapError",
+        "TestMaskPhone",
+        "TestNormalizeCode",
+        "TestNormalizePhone",
+        "TestObserveFloodSetsStatus",
+        "TestPeerFromResolved",
+        "TestQRFlowPushKeepsLatest",
+        "TestRenderQR",
+        "TestSentMessageID",
+        "TestSessionAdapter",
+        "TestTruncateRunes"
+      ]
+    },
+    {
+      "package": "internal/intel",
+      "tests": [
+        "TestAssessEmptyProfileSkipsRequest",
+        "TestAssessHTTPErrors",
+        "TestAssessLowRiskAndModelFallback",
+        "TestAssessMalformedResponses",
+        "TestAssessParentCanceled",
+        "TestAssessRequestShapeAndParsing",
+        "TestAssessTimeout",
+        "TestBuildStateTruncatesAndOmitsIdentifiers",
+        "TestClassify",
+        "TestLevelString",
+        "TestNewTypeSafeValidation",
+        "TestOptionsStringRedactsKey",
+        "TestParseRetryAfter",
+        "TestQuestionsCoverRiskSignals",
+        "TestTransportErrorDoesNotLeak"
+      ]
+    },
+    {
+      "package": "internal/captcha",
+      "tests": [
+        "TestAnswerDistribution",
+        "TestCheckImage",
+        "TestCheckOptions",
+        "TestDeterminism",
+        "TestGenerateRejectsBadInput",
+        "TestGenerationsDiffer",
+        "TestGridPlans",
+        "TestImages",
+        "TestMathPlans",
+        "TestParseKind",
+        "TestPrompts",
+        "TestStreamUniform"
+      ]
+    },
+    {
+      "package": "internal/tg",
+      "tests": [
+        "TestCallDecodesResultAndErrors",
+        "TestCommandArgs",
+        "TestMentionEscapes",
+        "TestMultipartUpload",
+        "TestRetryAfter429",
+        "TestTimedMethodsDoNotRetry429",
+        "TestTokenNeverLeaksInErrors"
+      ]
+    },
+    {
+      "package": "internal/store",
+      "tests": [
+        "TestChatSettingsDefaultsAndUpdate",
+        "TestGateUniqueOpenAndDue",
+        "TestPreviewObserveAndQueue",
+        "TestSingleInstanceLock",
+        "TestStatsAndDeletions"
+      ]
+    },
+    {
+      "package": "internal/webapp",
+      "tests": [
+        "TestAPI",
+        "TestInitDataValidation",
+        "TestPagesAndHealth",
+        "TestRateLimitPerToken"
+      ]
+    },
+    {
+      "package": "assets/web",
+      "tests": [
+        "TestEmbeddedFiles",
+        "TestIndexReferences",
+        "TestNoExternalFetches"
+      ]
+    },
+    {
+      "package": "internal/config",
+      "tests": [
+        "TestEnvOnlyConfig",
+        "TestSampleParses",
+        "TestValidation"
+      ]
+    },
+    {
+      "package": "internal/docgen",
+      "tests": [
+        "TestConfigExampleMatchesSample",
+        "TestGeneratedDocsUpToDate",
+        "TestMiniAppGridMatchesRenderer"
+      ]
+    },
+    {
+      "package": "internal/preview",
+      "tests": [
+        "TestDailyLimit",
+        "TestMinGapSurvivesWakeups",
+        "TestSitemapChangesAreRefreshed"
+      ]
+    },
+    {
+      "package": "internal/i18n",
+      "tests": [
+        "TestAllReferencedKeysExist",
+        "TestTranslationsComplete"
+      ]
+    },
+    {
+      "package": "internal/app",
+      "tests": [
+        "TestRunEndToEnd"
+      ]
+    }
+  ]
+}

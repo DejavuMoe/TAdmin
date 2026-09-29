@@ -1,0 +1,15 @@
+{
+  "name": "tadmin-workspace",
+  "private": true,
+  "description": "TAdmin monorepo tooling (the bot itself is a Go module; see go.mod)",
+  "packageManager": "pnpm@12.5.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "docs:gen": "go run ./cmd/docgen",
+    "docs:dev": "pnpm --filter @tadmin/docs dev",
+    "docs:build": "pnpm --filter @tadmin/docs build",
+    "docs:preview": "pnpm --filter @tadmin/docs preview"
+  }
+}

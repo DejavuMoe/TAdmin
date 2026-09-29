@@ -1,8 +1,9 @@
+// Package migrations embeds the ordered SQLite schema migrations.
 package migrations
 
 import "embed"
 
-// Files contains the ordered SQLite migrations shipped in the TAdmin binary.
+// FS holds NNNN_name.sql files applied in lexical order.
 //
 //go:embed *.sql
-var Files embed.FS
+var FS embed.FS

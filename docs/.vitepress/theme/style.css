@@ -1,0 +1,183 @@
+/* TAdmin documentation theme.
+ * Brand: Telegram sky blue → soft violet. Charts use the validated data-viz
+ * blue (#2a78d6 light / #3987e5 dark) and the fixed status palette. */
+
+:root {
+  --vp-font-family-base: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", sans-serif;
+  --vp-font-family-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
+
+  --vp-c-brand-1: #1f6fd1;
+  --vp-c-brand-2: #2a78d6;
+  --vp-c-brand-3: #3987e5;
+  --vp-c-brand-soft: rgba(42, 120, 214, 0.12);
+  --tadmin-accent: #6d5dfc;
+  --tadmin-sky: #2aabee;
+
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(120deg, #1f8fe0 15%, #6d5dfc 85%);
+  --vp-home-hero-image-background-image: radial-gradient(circle at 30% 40%, rgba(42, 171, 238, 0.45), transparent 60%),
+    radial-gradient(circle at 70% 60%, rgba(109, 93, 252, 0.4), transparent 60%);
+  --vp-home-hero-image-filter: blur(56px);
+
+  /* Charts & status (data-viz reference palette). */
+  --viz-series: #2a78d6;
+  --viz-surface: var(--vp-c-bg);
+  --viz-grid: var(--vp-c-divider);
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+  --status-neutral: #8a8f98;
+
+  --tadmin-card: var(--vp-c-bg-soft);
+  --tadmin-card-border: var(--vp-c-divider);
+  --tadmin-radius: 14px;
+  --tadmin-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
+
+  /* Telegram-like chat mock */
+  --tg-bg: #e7eef6;
+  --tg-pattern: rgba(42, 120, 214, 0.06);
+  --tg-bubble: #ffffff;
+  --tg-bubble-text: #0f172a;
+  --tg-muted: #6b7a90;
+  --tg-button: rgba(42, 120, 214, 0.1);
+  --tg-button-text: #1f6fd1;
+  --tg-eph: #f4f0ff;
+}
+
+.dark {
+  --vp-c-brand-1: #7cb4f5;
+  --vp-c-brand-2: #5b9ff0;
+  --vp-c-brand-3: #3987e5;
+  --vp-c-brand-soft: rgba(57, 135, 229, 0.16);
+  --vp-home-hero-name-background: linear-gradient(120deg, #4cb8f5 15%, #9a8cff 85%);
+  --viz-series: #3987e5;
+  --tadmin-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.25);
+  --tg-bg: #0f1a26;
+  --tg-pattern: rgba(91, 159, 240, 0.06);
+  --tg-bubble: #182533;
+  --tg-bubble-text: #e6edf5;
+  --tg-muted: #8395aa;
+  --tg-button: rgba(91, 159, 240, 0.16);
+  --tg-button-text: #8cc2ff;
+  --tg-eph: #231f3d;
+}
+
+/* ---------- Home ---------- */
+
+.VPHero .name {
+  letter-spacing: -0.02em;
+}
+.VPHero .tagline {
+  text-wrap: balance;
+}
+/* The hero slot holds a live chat mock, not a square logo: below the two-column
+   breakpoint VitePress's fixed 320/392px box and negative margins would pull it
+   over the tagline, so let it flow after the text at its natural height. */
+@media (max-width: 959px) {
+  .VPHero.has-image .image {
+    order: 3;
+    margin: 36px 0 0;
+  }
+  .VPHero.has-image .image-container {
+    width: 100%;
+    height: auto;
+  }
+}
+.VPHome .VPFeature {
+  border-radius: var(--tadmin-radius);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.VPHome .VPFeature:hover {
+  transform: translateY(-3px);
+  border-color: var(--vp-c-brand-2);
+  box-shadow: var(--tadmin-shadow);
+}
+.VPHome .VPFeature .icon {
+  background: linear-gradient(135deg, rgba(42, 171, 238, 0.18), rgba(109, 93, 252, 0.18));
+}
+
+/* ---------- Content ---------- */
+
+.vp-doc h2 {
+  border-top: none;
+  padding-top: 8px;
+  margin-top: 48px;
+}
+.vp-doc table {
+  display: table;
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.vp-doc th {
+  background: var(--vp-c-bg-soft);
+  font-weight: 600;
+}
+.vp-doc .lead {
+  font-size: 1.12rem;
+  line-height: 1.8;
+  color: var(--vp-c-text-2);
+}
+.vp-doc kbd {
+  border: 1px solid var(--vp-c-divider);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 0 6px;
+  font-size: 0.85em;
+  font-family: var(--vp-font-family-mono);
+}
+
+/* Shared card & chip primitives used by components. */
+.t-card {
+  background: var(--tadmin-card);
+  border: 1px solid var(--tadmin-card-border);
+  border-radius: var(--tadmin-radius);
+  padding: 20px;
+}
+.t-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12.5px;
+  line-height: 20px;
+  color: var(--vp-c-text-2);
+  background: var(--vp-c-bg);
+  white-space: nowrap;
+}
+.t-chip.on,
+button.t-chip:hover {
+  border-color: var(--vp-c-brand-2);
+  color: var(--vp-c-brand-1);
+}
+button.t-chip {
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.t-sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--vp-c-text-3);
+}
+.t-sync::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--status-good);
+  box-shadow: 0 0 0 3px rgba(12, 163, 12, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .VPHome .VPFeature,
+  .VPHome .VPFeature:hover {
+    transition: none;
+    transform: none;
+  }
+}

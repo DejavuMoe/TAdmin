@@ -1,0 +1,410 @@
+[
+  {
+    "name": "meta",
+    "columns": [
+      {
+        "name": "key",
+        "type": "TEXT"
+      },
+      {
+        "name": "value",
+        "type": "BLOB"
+      }
+    ]
+  },
+  {
+    "name": "chats",
+    "columns": [
+      {
+        "name": "chat_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "title",
+        "type": "TEXT"
+      },
+      {
+        "name": "username",
+        "type": "TEXT"
+      },
+      {
+        "name": "status",
+        "type": "TEXT"
+      },
+      {
+        "name": "linked_chat_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "added_by",
+        "type": "INTEGER"
+      },
+      {
+        "name": "settings",
+        "type": "TEXT"
+      },
+      {
+        "name": "lockdown_until",
+        "type": "INTEGER"
+      },
+      {
+        "name": "problems",
+        "type": "TEXT"
+      },
+      {
+        "name": "created_at",
+        "type": "INTEGER"
+      },
+      {
+        "name": "updated_at",
+        "type": "INTEGER"
+      }
+    ]
+  },
+  {
+    "name": "gates",
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "chat_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "user_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "source",
+        "type": "TEXT"
+      },
+      {
+        "name": "state",
+        "type": "TEXT"
+      },
+      {
+        "name": "outcome",
+        "type": "TEXT"
+      },
+      {
+        "name": "delivery",
+        "type": "TEXT"
+      },
+      {
+        "name": "kind",
+        "type": "TEXT"
+      },
+      {
+        "name": "seed",
+        "type": "BLOB"
+      },
+      {
+        "name": "gen",
+        "type": "INTEGER"
+      },
+      {
+        "name": "picks",
+        "type": "TEXT"
+      },
+      {
+        "name": "attempts",
+        "type": "INTEGER"
+      },
+      {
+        "name": "max_attempts",
+        "type": "INTEGER"
+      },
+      {
+        "name": "deadline",
+        "type": "INTEGER"
+      },
+      {
+        "name": "next_at",
+        "type": "INTEGER"
+      },
+      {
+        "name": "steps",
+        "type": "INTEGER"
+      },
+      {
+        "name": "retries",
+        "type": "INTEGER"
+      },
+      {
+        "name": "last_error",
+        "type": "TEXT"
+      },
+      {
+        "name": "token",
+        "type": "TEXT"
+      },
+      {
+        "name": "user_name",
+        "type": "TEXT"
+      },
+      {
+        "name": "user_username",
+        "type": "TEXT"
+      },
+      {
+        "name": "lang",
+        "type": "TEXT"
+      },
+      {
+        "name": "user_chat_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "query_id",
+        "type": "TEXT"
+      },
+      {
+        "name": "prev_perms",
+        "type": "TEXT"
+      },
+      {
+        "name": "prev_until",
+        "type": "INTEGER"
+      },
+      {
+        "name": "prompt_msg",
+        "type": "INTEGER"
+      },
+      {
+        "name": "captcha_chat",
+        "type": "INTEGER"
+      },
+      {
+        "name": "captcha_msg",
+        "type": "INTEGER"
+      },
+      {
+        "name": "eph_msg",
+        "type": "INTEGER"
+      },
+      {
+        "name": "review_chat",
+        "type": "INTEGER"
+      },
+      {
+        "name": "review_msg",
+        "type": "INTEGER"
+      },
+      {
+        "name": "join_msg",
+        "type": "INTEGER"
+      },
+      {
+        "name": "risk",
+        "type": "REAL"
+      },
+      {
+        "name": "risk_reason",
+        "type": "TEXT"
+      },
+      {
+        "name": "flags",
+        "type": "INTEGER"
+      },
+      {
+        "name": "actor_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "created_at",
+        "type": "INTEGER"
+      },
+      {
+        "name": "updated_at",
+        "type": "INTEGER"
+      },
+      {
+        "name": "closed_at",
+        "type": "INTEGER"
+      }
+    ]
+  },
+  {
+    "name": "events",
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "at",
+        "type": "INTEGER"
+      },
+      {
+        "name": "chat_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "kind",
+        "type": "TEXT"
+      },
+      {
+        "name": "user_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "actor_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "value",
+        "type": "INTEGER"
+      },
+      {
+        "name": "data",
+        "type": "TEXT"
+      }
+    ]
+  },
+  {
+    "name": "deletions",
+    "columns": [
+      {
+        "name": "chat_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "message_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "user_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "due",
+        "type": "INTEGER"
+      }
+    ]
+  },
+  {
+    "name": "channel_pins",
+    "columns": [
+      {
+        "name": "chat_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "message_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "channel_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "at",
+        "type": "INTEGER"
+      }
+    ]
+  },
+  {
+    "name": "preview_sources",
+    "columns": [
+      {
+        "name": "id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "url",
+        "type": "TEXT"
+      },
+      {
+        "name": "kind",
+        "type": "TEXT"
+      },
+      {
+        "name": "title",
+        "type": "TEXT"
+      },
+      {
+        "name": "enabled",
+        "type": "INTEGER"
+      },
+      {
+        "name": "etag",
+        "type": "TEXT"
+      },
+      {
+        "name": "last_modified",
+        "type": "TEXT"
+      },
+      {
+        "name": "checked_at",
+        "type": "INTEGER"
+      },
+      {
+        "name": "next_check",
+        "type": "INTEGER"
+      },
+      {
+        "name": "last_error",
+        "type": "TEXT"
+      },
+      {
+        "name": "url_count",
+        "type": "INTEGER"
+      },
+      {
+        "name": "created_at",
+        "type": "INTEGER"
+      }
+    ]
+  },
+  {
+    "name": "preview_urls",
+    "columns": [
+      {
+        "name": "url",
+        "type": "TEXT"
+      },
+      {
+        "name": "source_id",
+        "type": "INTEGER"
+      },
+      {
+        "name": "lastmod",
+        "type": "INTEGER"
+      },
+      {
+        "name": "seen_at",
+        "type": "INTEGER"
+      },
+      {
+        "name": "state",
+        "type": "TEXT"
+      },
+      {
+        "name": "priority",
+        "type": "INTEGER"
+      },
+      {
+        "name": "queued_at",
+        "type": "INTEGER"
+      },
+      {
+        "name": "refreshed_at",
+        "type": "INTEGER"
+      },
+      {
+        "name": "attempts",
+        "type": "INTEGER"
+      },
+      {
+        "name": "result",
+        "type": "TEXT"
+      },
+      {
+        "name": "reply",
+        "type": "TEXT"
+      }
+    ]
+  }
+]

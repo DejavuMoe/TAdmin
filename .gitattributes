@@ -1,0 +1,3 @@
+# Generated documentation data is compared byte-for-byte by internal/docgen.
+docs/.vitepress/data/generated/*.json text eol=lf
+*.png binary

@@ -3,15 +3,21 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 COPY . .
-ARG VERSION=v0.1.0-rc.1
+ARG VERSION=v2.0.0
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X tadmin/internal/app.Version=${VERSION}" -o /out/tadmin ./cmd/tadmin \
     && mkdir -p /out/data && chmod 0700 /out/data
 
 FROM scratch
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build /out/tadmin /usr/local/bin/tadmin
-COPY --from=build --chown=65532:65532 /out/data /var/lib/tadmin
+COPY --from=build --chown=65532:65532 /out/data /data
 USER 65532:65532
-WORKDIR /var/lib/tadmin
+WORKDIR /data
+ENV TADMIN_DATA_DIR=/data \
+    TADMIN_LISTEN=0.0.0.0:8080 \
+    TADMIN_CONFIG=/etc/tadmin/config.toml
+VOLUME ["/data"]
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s CMD ["/usr/local/bin/tadmin", "healthcheck"]
 ENTRYPOINT ["/usr/local/bin/tadmin"]
-CMD ["--config", "/etc/tadmin/config.toml"]
+CMD ["run"]

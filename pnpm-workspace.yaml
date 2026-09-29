@@ -1,0 +1,6 @@
+packages:
+  - docs
+
+# esbuild (via VitePress/Vite) installs its native binary in a postinstall script.
+allowBuilds:
+  esbuild: true

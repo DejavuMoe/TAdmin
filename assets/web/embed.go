@@ -1,8 +1,11 @@
+// Package web embeds the verification Mini App front end (plain HTML, CSS and
+// JavaScript; no build step). The page is served at /v/{token} and the other
+// files under /assets/<name>.
 package web
 
 import "embed"
 
-// Files contains the native Mini App assets. No frontend build step is needed.
+// FS holds index.html, app.css and app.js at its root.
 //
 //go:embed index.html app.css app.js
-var Files embed.FS
+var FS embed.FS

@@ -1,5 +1,6 @@
 [Unit]
-Description=TAdmin Telegram admission verification bot
+Description=TAdmin Telegram group guardian
+Documentation=file:///usr/share/doc/tadmin/README.md
 Wants=network-online.target
 After=network-online.target
 
@@ -7,25 +8,34 @@ After=network-online.target
 Type=simple
 User=tadmin
 Group=tadmin
+# /etc/tadmin/tadmin.env: TADMIN_BOT_TOKEN=... TADMIN_OWNER_ID=...
 EnvironmentFile=/etc/tadmin/tadmin.env
-WorkingDirectory=/var/lib/tadmin
-StateDirectory=tadmin
-StateDirectoryMode=0700
-ExecStart=/usr/local/bin/tadmin --config /etc/tadmin/config.toml
+Environment=TADMIN_DATA_DIR=/var/lib/tadmin
+ExecStart=/usr/local/bin/tadmin run --config /etc/tadmin/config.toml
 Restart=on-failure
 RestartSec=5s
 TimeoutStopSec=20s
+StateDirectory=tadmin
+StateDirectoryMode=0700
+WorkingDirectory=/var/lib/tadmin
 UMask=0077
 
 NoNewPrivileges=true
 PrivateTmp=true
+PrivateDevices=true
 ProtectSystem=strict
 ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
 ReadWritePaths=/var/lib/tadmin
 RestrictSUIDSGID=true
+RestrictNamespaces=true
 CapabilityBoundingSet=
 AmbientCapabilities=
 LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 
 [Install]

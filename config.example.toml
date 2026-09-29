@@ -1,22 +1,27 @@
-# TAdmin deployment configuration.
-# The bot token is intentionally not stored here. Set TADMIN_BOT_TOKEN in the
-# service environment before starting TAdmin.
+# TAdmin 配置（可选文件；所有项都能用环境变量覆盖）
+# Bot Token 只从环境变量读取：TADMIN_BOT_TOKEN 或 TADMIN_BOT_TOKEN_FILE
 
-# Telegram user ID of the single global TAdmin owner.
-owner_user_id = 123456789
+owner_id = 123456789          # 你的 Telegram 数字 ID（@userinfobot 可查）；环境变量 TADMIN_OWNER_ID
+data_dir = "data"             # SQLite 数据目录；环境变量 TADMIN_DATA_DIR
+language = "zh-CN"            # 默认语言：zh-CN / en
+timezone = "Asia/Shanghai"    # 统计与日报使用的时区
+log_format = "json"           # json / text
+log_level = "info"
+# bot_api_url = "http://127.0.0.1:8081"   # 可选：自建 Local Bot API Server
 
-# SQLite creates this file and its parent directory when TAdmin starts.
-database_path = "./data/tadmin.db"
+[web]
+# 可选：配置 HTTPS 域名后启用 Mini App 验证页与 Guard 零窗口入群。
+# public_url = "https://verify.example.com"
+listen = "127.0.0.1:8080"
 
-# Default: 127.0.0.1:8080; only loopback listeners are accepted.
-# listen_address = "127.0.0.1:8080"
+[userbot]
+# 可选：预览刷新需要一个用户号（建议小号）。在 https://my.telegram.org 申请。
+# 登录在机器人私聊里扫码完成。api_hash 也可用环境变量 TADMIN_API_HASH。
+# api_id = 0
+# api_hash = ""
 
-# May remain empty for tests/offline work. /tadmin setup requires absolute HTTPS.
-public_base_url = ""
-
-# Optional shared review/log group. Omit to use the owner private chat.
-# This may be an existing group, including the source group itself.
-# management_chat_id = -1001234567890
-
-# Default: zh-CN. Supported values: "zh-CN" and "en".
-# default_language = "zh-CN"
+[preview]
+check_interval = "6h"         # 订阅源检查间隔
+min_gap = "45s"               # 两次刷新之间的最小间隔（另加随机抖动）
+daily_limit = 300             # 每日最多刷新次数
+allow_private = false         # 是否允许抓取内网地址

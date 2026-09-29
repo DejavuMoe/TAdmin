@@ -1,0 +1,265 @@
+# TAdmin 项目进度（文档站“进度”页面的唯一数据源）
+#
+# 每个功能引用的测试名由 `go run ./cmd/docgen` 校验：测试被删除或改名时，
+# `go test ./internal/docgen` 会失败，从而保证文档里的“已验证”永远有测试支撑。
+#
+# status:
+#   verified  已完成，行为完全由自动化测试覆盖（不依赖真实 Telegram 的特有表现）
+#   live      已完成且离线测试通过，但还需要在真实 Telegram 测试群中验收
+#   shipped   已在真实 Telegram 验收通过
+#   planned   规划中
+
+version = "v2.0.0-dev"
+updated = "2026-09-28"
+headline = "TAdmin 2 重写完成：全部功能已实现并通过离线测试与两轮独立代码审查，正在等待真实 Telegram 测试群验收。"
+
+[[milestone]]
+title = "TAdmin 2 设计与重写"
+date = "2026-09-28"
+status = "done"
+desc = "从零重写：自研 Bot API 客户端、持久化入群状态机、私聊按钮控制台、频道联动、预览刷新、Mini App。"
+
+[[milestone]]
+title = "两轮独立代码审查与修复"
+date = "2026-09-28"
+status = "done"
+desc = "35 项问题全部修复并补齐回归测试，包括授权绕过、封禁时长退化为永久、验证绕过等。"
+
+[[milestone]]
+title = "文档站与“代码即文档”同步"
+date = "2026-09-28"
+status = "done"
+desc = "VitePress 文档站上线；配置、命令、状态机、数据结构、测试统计与验证码样例均由 docgen 从代码生成。"
+
+[[milestone]]
+title = "真实 Telegram 测试群验收"
+date = ""
+status = "next"
+desc = "按运维 → 上线验收清单，用测试群与普通小号走通全部流程，重点验证 Bot API 10.x 临时消息与 Guard。"
+
+[[milestone]]
+title = "正式群启用"
+date = ""
+status = "planned"
+desc = "先在一个低风险群启用观察，再逐步接入其他群。"
+
+# ---------------- 入群验证 ----------------
+
+[[feature]]
+area = "verification"
+title = "浮层验证（仅本人可见的临时消息）"
+status = "live"
+tests = ["TestOverlayPassFlow", "TestPickToggleAndReset"]
+live = "Bot API 10.2 临时消息在 Android / iOS / 桌面客户端上的显示与送达；点击“开始验证”覆盖提示消息。"
+
+[[feature]]
+area = "verification"
+title = "群内公开与私聊两种投递方式"
+status = "live"
+tests = ["TestPublicDelivery", "TestPrivateDeliveryDeepLink"]
+live = "私聊深链从未 Start 过机器人的账号打开时的表现。"
+
+[[feature]]
+area = "verification"
+title = "三种题型与服务端确定性出题"
+status = "verified"
+tests = ["TestDeterminism", "TestGenerationsDiffer", "TestGridPlans", "TestMathPlans", "TestCheckImage", "TestCheckOptions", "TestAnswerDistribution", "TestImages"]
+
+[[feature]]
+area = "verification"
+title = "答错换题、次数用尽移出、递增冷却"
+status = "verified"
+tests = ["TestWrongAnswersRemoveWithEscalatingCooldown", "TestCooldownSchedule", "TestTimedMethodsDoNotRetry429"]
+
+[[feature]]
+area = "verification"
+title = "超时移出与调度器"
+status = "verified"
+tests = ["TestTimeoutRemoves", "TestSchedulerRunsDueGates"]
+
+[[feature]]
+area = "verification"
+title = "求助转人工与审核卡"
+status = "live"
+tests = ["TestHelpGoesToReviewAndAdminApproves", "TestReviewTimeoutRemoves", "TestUndeliverableReviewTimeoutLetsUserIn"]
+live = "群内审核卡由其他管理员操作；非管理员点击被拒。"
+
+[[feature]]
+area = "verification"
+title = "保留管理员原有限制、不误恢复自身禁言"
+status = "live"
+tests = ["TestPreservesEarlierAdminRestriction", "TestLeaveAndRejoinDoesNotRestoreOwnMute"]
+live = "真实群中限制成员退群重进后的权限记录。"
+
+[[feature]]
+area = "verification"
+title = "豁免规则（管理员拉入、#免验证 链接、申请已批准）"
+status = "verified"
+tests = ["TestExemptions", "TestServiceMessageFallbackDoesNotOverrideExemption", "TestPromotedWhileVerifyingIsCancelled"]
+
+[[feature]]
+area = "verification"
+title = "入群申请验证（零未禁言窗口）"
+status = "live"
+tests = ["TestJoinRequestFlow", "TestJoinRequestUnreachableGoesToOwnerReview", "TestDirectJoinWhileRequestPendingIsVerified"]
+live = "user_chat_id 5 分钟联系窗口、批准后不重复验证。"
+
+[[feature]]
+area = "verification"
+title = "Guard 查询与 Mini App 大图验证"
+status = "live"
+tests = ["TestWebAppFlow", "TestGuardExpiredQueryFallsBackToApprove", "TestAPI", "TestInitDataValidation", "TestRateLimitPerToken", "TestPagesAndHealth"]
+live = "Bot API 10.1 Guard 指派、10 秒内弹出 Mini App、真实 initData 签名。"
+
+[[feature]]
+area = "verification"
+title = "突击防护"
+status = "live"
+tests = ["TestRaidLockdown"]
+live = "真实突发入群下的共享“开始验证”按钮与防护解除。"
+
+[[feature]]
+area = "verification"
+title = "拦截非管理员拉入的机器人"
+status = "verified"
+tests = ["TestBotsAddedByMembersAreRemoved"]
+
+[[feature]]
+area = "verification"
+title = "AI 入群资料风险提示（TypeSafe Jev）"
+status = "live"
+tests = ["TestAssessRequestShapeAndParsing", "TestAssessHTTPErrors", "TestClassify", "TestBuildStateTruncatesAndOmitsIdentifiers"]
+live = "在真实入群资料上评估阈值；中文广告资料的识别效果。"
+
+[[feature]]
+area = "verification"
+title = "故障重试与权限缺失告警"
+status = "verified"
+tests = ["TestTransientFailureRetriesAndRecovers", "TestMissingRightsCancelsAndAlertsOwner", "TestPausedChatSkipsNewcomers"]
+
+# ---------------- 频道联动 ----------------
+
+[[feature]]
+area = "channel"
+title = "自动取消频道置顶 / 只保留最新"
+status = "live"
+tests = ["TestChannelAutoUnpinAndCleanKeepsAdminPins"]
+live = "讨论群自动置顶与转发更新的先后时序。"
+
+[[feature]]
+area = "channel"
+title = "一键清理历史频道置顶（保留管理员置顶）"
+status = "live"
+tests = ["TestChannelAutoUnpinAndCleanKeepsAdminPins"]
+live = "大量历史置顶时的耗时与限速。"
+
+[[feature]]
+area = "channel"
+title = "拦截频道马甲"
+status = "verified"
+tests = ["TestChannelMaskBlocked"]
+
+# ---------------- 预览刷新 ----------------
+
+[[feature]]
+area = "preview"
+title = "sitemap / RSS / Atom / JSON Feed 发现与解析"
+status = "verified"
+tests = ["TestParseSitemap", "TestParseSitemapIndex", "TestParseRSS2", "TestParseAtom", "TestParseJSONFeed", "TestParseRDF", "TestDiscoverRobotsAndHTML", "TestDiscoverProbes", "TestWalkSitemapIndex"]
+
+[[feature]]
+area = "preview"
+title = "抓取安全（SSRF、gzip 炸弹、跳转限制）"
+status = "verified"
+tests = ["TestFetchBlocksPrivateAddresses", "TestIsBlockedIP", "TestFetchSizeLimit", "TestFetchRedirects", "TestFetchGzip", "TestFetchConditional"]
+
+[[feature]]
+area = "preview"
+title = "慢速刷新队列（间隔、每日上限、去重、限流）"
+status = "verified"
+tests = ["TestSitemapChangesAreRefreshed", "TestDailyLimit", "TestMinGapSurvivesWakeups", "TestPreviewObserveAndQueue"]
+
+[[feature]]
+area = "preview"
+title = "用户号扫码 / 验证码登录与 @WebpageBot 刷新"
+status = "live"
+tests = ["TestRenderQR", "TestClassifyReply", "TestMapError", "TestSessionAdapter", "TestNormalizeCode", "TestManagerOffline"]
+live = "gotd 扫码登录、两步验证、@WebpageBot 的真实回复措辞。"
+
+# ---------------- 控制台与管理 ----------------
+
+[[feature]]
+area = "panel"
+title = "私聊按钮控制台与群组授权"
+status = "verified"
+tests = ["TestPanelNavigationAndToggles", "TestOwnerAddsGroupGetsSetupCard", "TestStrangerAddsGroupNeedsAuthorization", "TestPendingChatCannotBeActivatedByStranger", "TestNonAdminCannotOpenGroupPanel", "TestPendingListNotLeakedToStrangers", "TestMalformedCallbacksDoNotPanic"]
+
+[[feature]]
+area = "panel"
+title = "欢迎语（保留格式、按钮、仅本人可见）"
+status = "live"
+tests = ["TestWelcomeTextInputKeepsFormatting", "TestEntitiesToHTMLNesting", "TestParseButtons"]
+live = "仅本人可见的欢迎语在客户端的显示。"
+
+[[feature]]
+area = "panel"
+title = "群管理员回复命令"
+status = "verified"
+tests = ["TestGroupCommands", "TestCommandArgs"]
+
+[[feature]]
+area = "panel"
+title = "服务消息清理与未验证者消息拦截"
+status = "verified"
+tests = ["TestServiceMessageCleanupAndGateEnforcement"]
+
+[[feature]]
+area = "panel"
+title = "试玩验证题"
+status = "verified"
+tests = ["TestDemoChallenge"]
+
+[[feature]]
+area = "panel"
+title = "双语文案完整性"
+status = "verified"
+tests = ["TestAllReferencedKeysExist", "TestTranslationsComplete"]
+
+# ---------------- 平台与运维 ----------------
+
+[[feature]]
+area = "platform"
+title = "Bot API 客户端（限速、429 退避、Token 脱敏）"
+status = "verified"
+tests = ["TestCallDecodesResultAndErrors", "TestRetryAfter429", "TestTokenNeverLeaksInErrors", "TestMultipartUpload"]
+
+[[feature]]
+area = "platform"
+title = "SQLite 存储、单实例锁、在线备份"
+status = "verified"
+tests = ["TestSingleInstanceLock", "TestGateUniqueOpenAndDue", "TestChatSettingsDefaultsAndUpdate", "TestStatsAndDeletions"]
+
+[[feature]]
+area = "platform"
+title = "零配置启动（仅环境变量）与配置校验"
+status = "verified"
+tests = ["TestEnvOnlyConfig", "TestSampleParses", "TestValidation"]
+
+[[feature]]
+area = "platform"
+title = "整机端到端启动与优雅关闭"
+status = "verified"
+tests = ["TestRunEndToEnd"]
+
+[[feature]]
+area = "platform"
+title = "Docker 镜像"
+status = "live"
+tests = []
+live = "本机 Docker Hub 凭据异常（401）未能构建镜像；需在可拉取镜像的环境执行 docker compose up。"
+
+[[feature]]
+area = "platform"
+title = "每日摘要推送、多语言文档站英文版"
+status = "planned"
+tests = []

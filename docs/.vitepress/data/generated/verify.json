@@ -1,0 +1,52 @@
+{
+  "cooldown": [
+    {
+      "failure": 1,
+      "seconds": 120,
+      "label": "2m"
+    },
+    {
+      "failure": 2,
+      "seconds": 480,
+      "label": "8m"
+    },
+    {
+      "failure": 3,
+      "seconds": 1920,
+      "label": "32m"
+    },
+    {
+      "failure": 4,
+      "seconds": 7680,
+      "label": "2h8m"
+    },
+    {
+      "failure": 5,
+      "seconds": 30720,
+      "label": "8h32m"
+    },
+    {
+      "failure": 6,
+      "seconds": 86400,
+      "label": "24h"
+    },
+    {
+      "failure": 7,
+      "seconds": 86400,
+      "label": "24h"
+    }
+  ],
+  "min_ban_seconds": 120,
+  "geometry": {
+    "size": 540,
+    "margin": 15,
+    "gap": 12,
+    "cell": 162,
+    "n": 3
+  },
+  "blind_guess": {
+    "button": "—",
+    "image": "1/504",
+    "math": "1/6"
+  }
+}
