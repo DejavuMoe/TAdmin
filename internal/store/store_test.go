@@ -2,10 +2,14 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"tadmin/assets/migrations"
 )
 
 func newTestStore(t *testing.T) *Store {
@@ -95,6 +99,151 @@ func TestGateUniqueOpenAndDue(t *testing.T) {
 	got, err := s.GateByToken(ctx, "t2")
 	if err != nil || got.UserID != 7 {
 		t.Fatalf("by token: %+v %v", got, err)
+	}
+}
+
+func TestGateSourceFallbackPersists(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+	g := &Gate{ChatID: -1, UserID: 7, Source: SourceGuard, State: StateNew, Token: "guard-fallback", Seed: []byte("seed")}
+	if _, _, err := s.CreateGate(ctx, g); err != nil {
+		t.Fatal(err)
+	}
+	g.Source = SourceRequest
+	if err := s.SaveGate(ctx, g); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.GetGate(ctx, g.ID)
+	if err != nil || got.Source != SourceRequest {
+		t.Fatalf("fallback source lost: %+v, %v", got, err)
+	}
+}
+
+func TestStatsAcrossDST(t *testing.T) {
+	s := newTestStore(t)
+	loc, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2026, 3, 9, 12, 0, 0, 0, loc)
+	s.SetClock(func() time.Time { return now })
+	ctx := context.Background()
+	if err := s.AddEvent(ctx, Event{ChatID: -1, Kind: EvJoin}); err != nil {
+		t.Fatal(err)
+	}
+	days, err := s.Stats(ctx, -1, 3, loc)
+	if err != nil || days[2].Counts[EvJoin] != 1 || days[1].Counts[EvJoin] != 0 {
+		t.Fatalf("event assigned to wrong calendar date: %+v, %v", days, err)
+	}
+}
+
+func TestDeletedSourceCannotEnqueue(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+	src, _, err := s.AddSource(ctx, "https://example.com/feed", "rss", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.DeleteSource(ctx, src.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.ObserveURLs(ctx, src.ID, []Observed{{URL: "https://example.com/late"}}, true); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("deleted source accepted observations: %v", err)
+	}
+}
+
+func TestDeletedSourceQueueDoesNotAttachToNewSource(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+	a, _, _ := s.AddSource(ctx, "https://example.com/first", "rss", "")
+	if err := s.EnqueueURL(ctx, "https://example.com/queued", a.ID, 0); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.DeleteSource(ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	b, _, err := s.AddSource(ctx, "https://example.com/second", "rss", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if b.ID == a.ID {
+		t.Fatal("deleted id reused by a new source")
+	}
+	if _, err := s.ObserveURLs(ctx, a.ID, []Observed{{URL: "https://example.com/late"}}, true); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("old fetch wrote into replacement source: %v", err)
+	}
+	u, err := s.NextQueued(ctx, time.Now().Add(time.Second))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if u.SourceID == b.ID {
+		t.Fatal("retained queue attached to an unrelated source")
+	}
+}
+
+func TestSourceIDMigrationPreservesData(t *testing.T) {
+	ctx := context.Background()
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	db.SetMaxOpenConns(1)
+	s := &Store{db: db, now: time.Now}
+	body, err := migrations.FS.ReadFile("0001_init.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, stmt := range splitSQL(string(body)) {
+		if _, err := db.ExecContext(ctx, stmt); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := db.ExecContext(ctx, `CREATE TABLE schema_migrations (name TEXT PRIMARY KEY, applied_at INTEGER NOT NULL); INSERT INTO schema_migrations VALUES ('0001_init.sql', 1)`); err != nil {
+		t.Fatal(err)
+	}
+	a, _, err := s.AddSource(ctx, "https://example.com/kept", "rss", "kept")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.EnqueueURL(ctx, "https://example.com/page", a.ID, 0); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.GetSource(ctx, a.ID)
+	if err != nil || got.URL != a.URL || got.Title != a.Title {
+		t.Fatalf("source lost: %+v %v", got, err)
+	}
+	if err := s.DeleteSource(ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	b, _, err := s.AddSource(ctx, "https://example.com/new", "rss", "")
+	if err != nil || b.ID <= a.ID {
+		t.Fatalf("sequence not preserved: %+v %v", b, err)
+	}
+	if err := s.Check(ctx); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestChatMigrationConflictRollsBack(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+	for _, id := range []int64{-1, -2} {
+		if err := s.UpsertChat(ctx, &Chat{ID: id, Title: "original", Status: ChatActive}); err != nil {
+			t.Fatal(err)
+		}
+		if _, _, err := s.CreateGate(ctx, &Gate{ChatID: id, UserID: 7, Source: SourceJoin, State: StateNew, Token: fmt.Sprint(id), Seed: []byte("seed")}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := s.MigrateChat(ctx, -1, -2); err == nil {
+		t.Fatal("migration silently left gates on the retired chat")
+	}
+	if _, err := s.GetChat(ctx, -1); err != nil {
+		t.Fatal("failed migration lost source chat")
 	}
 }
 

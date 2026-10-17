@@ -383,6 +383,131 @@ func TestPreservesEarlierAdminRestriction(t *testing.T) {
 	}
 }
 
+func TestAdminRightsChangeInvalidatesCache(t *testing.T) {
+	e := newEnv(t, nil)
+	_, _ = e.eng.cfg.Roles.Admins(e.ctx, chatID)
+	u := user(adminID)
+	e.srv.SetAdmins(chatID, ownerID)
+	e.eng.OnMemberUpdate(e.ctx, e.chat, &tg.ChatMemberUpdated{
+		From: user(ownerID), OldChatMember: tg.ChatMember{User: u, Status: tg.StatusAdministrator, CanRestrictMembers: true},
+		NewChatMember: tg.ChatMember{User: u, Status: tg.StatusAdministrator, CanRestrictMembers: false},
+	})
+	if ok, _ := e.eng.cfg.Roles.CanModerate(e.ctx, chatID, adminID); ok {
+		t.Fatal("cached moderation permission survived administrator rights update")
+	}
+}
+
+func TestShortAdminRestrictionPreserved(t *testing.T) {
+	e := newEnv(t, nil)
+	g := &store.Gate{ChatID: chatID, UserID: userID, PrevPerms: `{"can_send_messages":true,"can_send_photos":false}`, PrevUntil: e.clock().Add(2 * time.Minute).Unix(), MuteUntil: e.clock().Add(10 * time.Minute).Unix()}
+	e.srv.SetMember(chatID, tg.ChatMember{Status: tg.StatusRestricted, User: user(userID), IsMember: true, UntilDate: g.MuteUntil, ChatPermissions: tg.Muted()})
+	if err := e.eng.unrestrict(e.ctx, g); err != nil {
+		t.Fatal(err)
+	}
+	r, _ := e.srv.Last("restrictChatMember")
+	if r.Obj("permissions")["can_send_photos"] != false || r.Int("until_date") != g.PrevUntil {
+		t.Fatal("two-minute administrator restriction removed early")
+	}
+}
+
+func TestVerificationPreservesNewAdminMute(t *testing.T) {
+	e := newEnv(t, func(s *store.Settings) { s.Verify.Kind = "button" })
+	e.join(userID, 0)
+	g := e.gate(userID)
+	until := e.clock().Add(24 * time.Hour).Unix()
+	e.srv.SetMember(chatID, tg.ChatMember{User: user(userID), Status: tg.StatusRestricted, IsMember: true, UntilDate: until, ChatPermissions: tg.Muted()})
+	e.srv.Reset()
+	e.answerViaButtons(g, solve(t, g), ephMsg(g))
+	if len(e.srv.Calls("restrictChatMember")) != 0 {
+		t.Fatal("verification overwrote a newer administrator restriction")
+	}
+}
+
+func TestEarlierGateDoesNotOwnAdminMute(t *testing.T) {
+	e := newEnv(t, func(s *store.Settings) { s.Verify.Kind = "button" })
+	e.join(userID, 0)
+	g := e.gate(userID)
+	e.answerViaButtons(g, solve(t, g), ephMsg(g))
+	m := &tg.ChatMember{User: user(userID), Status: tg.StatusRestricted, IsMember: true, UntilDate: e.clock().Add(24 * time.Hour).Unix(), ChatPermissions: tg.Muted()}
+	if e.eng.ownMute(e.ctx, g, m) {
+		t.Fatal("unrelated administrator mute treated as TAdmin's")
+	}
+}
+
+func TestResolvingRequestCannotSkipDirectJoin(t *testing.T) {
+	e := newEnv(t, nil)
+	g := &store.Gate{ChatID: chatID, UserID: userID, Source: store.SourceRequest, State: store.StateResolving, Outcome: store.OutcomeReject, Seed: []byte("seed"), Token: "old-request", NextAt: e.clock().Add(time.Minute)}
+	if _, _, err := e.st.CreateGate(e.ctx, g); err != nil {
+		t.Fatal(err)
+	}
+	e.join(userID, 0)
+	got := e.gate(userID)
+	if got.Source != store.SourceJoin || !got.Done(stepRestricted) {
+		t.Fatalf("direct join bypassed verification: %+v", got)
+	}
+}
+
+func TestWebOpenRetryDoesNotReturnEmptyChallenge(t *testing.T) {
+	e := newEnv(t, nil)
+	g := &store.Gate{ChatID: chatID, UserID: userID, Source: store.SourceJoin, State: store.StateNew, Seed: []byte("0123456789abcdef"), Token: "new-retry", Deadline: e.clock().Add(time.Minute), NextAt: e.clock()}
+	if _, _, err := e.st.CreateGate(e.ctx, g); err != nil {
+		t.Fatal(err)
+	}
+	e.srv.Fail("getChatMember", tgtest.Fault{Code: 500, Description: "temporary"})
+	v, err := e.eng.WebOpen(e.ctx, g.Token, userID, "")
+	if err == nil {
+		t.Fatalf("unfinished gate returned success: %+v", v)
+	}
+}
+
+func TestCASCheckpointIncludesDecision(t *testing.T) {
+	e := newEnv(t, func(s *store.Settings) { s.Verify.CAS = true })
+	e.eng.cfg.CAS = ablationCAS(func(context.Context, int64) (bool, error) { return true, nil })
+	_, err := e.st.DB().Exec(`CREATE TABLE checkpoints(state TEXT, outcome TEXT, steps INTEGER);
+CREATE TRIGGER capture_checkpoint AFTER UPDATE ON gates BEGIN INSERT INTO checkpoints VALUES (NEW.state, NEW.outcome, NEW.steps); END;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.join(userID, 0)
+	var lost int
+	if err := e.st.DB().QueryRow(`SELECT count(*) FROM checkpoints WHERE state='new' AND outcome='' AND (steps & ?) <> 0`, stepChecked).Scan(&lost); err != nil {
+		t.Fatal(err)
+	}
+	if lost != 0 {
+		t.Fatal("durable checkpoint says CAS checked but drops its terminal decision")
+	}
+	if e.gate(userID).Outcome != store.OutcomeCAS {
+		t.Fatal("CAS result lost")
+	}
+}
+
+func TestOverdueNewGateDoesNotSendExpiredMute(t *testing.T) {
+	e := newEnv(t, nil)
+	e.srv.SetMember(chatID, tg.ChatMember{User: user(userID), Status: tg.StatusMember})
+	g := &store.Gate{ChatID: chatID, UserID: userID, Source: store.SourceJoin, State: store.StateNew, Seed: []byte("0123456789abcdef"), Token: "overdue", Deadline: e.clock().Add(-time.Hour), NextAt: e.clock()}
+	if _, _, err := e.st.CreateGate(e.ctx, g); err != nil {
+		t.Fatal(err)
+	}
+	e.eng.Process(e.ctx, g.ID)
+	if len(e.srv.Calls("restrictChatMember", "banChatMember")) != 0 || e.gate(userID).Outcome != store.OutcomeCancel {
+		t.Fatal("missed challenge caused punitive or expired restriction")
+	}
+}
+
+func TestWebOpenPreparesRestoredNewGate(t *testing.T) {
+	e := newEnv(t, func(s *store.Settings) { s.Verify.Kind = "math" })
+	e.join(userID, 0)
+	g := e.gate(userID)
+	g.State = store.StateNew
+	if err := e.st.SaveGate(e.ctx, g); err != nil {
+		t.Fatal(err)
+	}
+	v, err := e.eng.WebOpen(e.ctx, g.Token, userID, "")
+	if err != nil || v.Status != StatusChallenge || v.Gen == 0 || len(v.Options) == 0 {
+		t.Fatalf("incomplete restored challenge: %+v, %v", v, err)
+	}
+}
+
 func TestJoinRequestFlow(t *testing.T) {
 	e := newEnv(t, func(s *store.Settings) { s.Verify.Kind = "button" })
 	u := user(userID)
@@ -711,6 +836,7 @@ func TestDirectJoinWhileRequestPendingIsVerified(t *testing.T) {
 func TestLeaveAndRejoinDoesNotRestoreOwnMute(t *testing.T) {
 	e := newEnv(t, func(s *store.Settings) { s.Verify.Kind = "button" })
 	e.join(userID, 0)
+	oldMuteUntil := e.gate(userID).MuteUntil
 	u := user(userID)
 	// The member leaves mid-way; Telegram keeps the restriction record.
 	e.eng.OnMemberUpdate(e.ctx, e.chat, &tg.ChatMemberUpdated{Chat: tg.Chat{ID: chatID}, From: u,
@@ -721,7 +847,7 @@ func TestLeaveAndRejoinDoesNotRestoreOwnMute(t *testing.T) {
 	}
 	// Simulate Telegram still reporting the old full mute on rejoin.
 	e.advance(time.Minute)
-	e.srv.SetMember(chatID, tg.ChatMember{Status: tg.StatusRestricted, IsMember: true, User: u, ChatPermissions: tg.Muted()})
+	e.srv.SetMember(chatID, tg.ChatMember{Status: tg.StatusRestricted, IsMember: true, User: u, UntilDate: oldMuteUntil, ChatPermissions: tg.Muted()})
 	e.eng.OnMemberUpdate(e.ctx, e.chat, &tg.ChatMemberUpdated{Chat: tg.Chat{ID: chatID}, From: u,
 		OldChatMember: tg.ChatMember{Status: tg.StatusLeft, User: u}, NewChatMember: tg.ChatMember{Status: tg.StatusRestricted, IsMember: true, User: u}})
 	e.tick()

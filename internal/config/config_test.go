@@ -29,6 +29,44 @@ func TestSampleParses(t *testing.T) {
 	}
 }
 
+func TestAIBackendConfig(t *testing.T) {
+	for _, tc := range []struct {
+		name, provider, base, model string
+		valid                       bool
+	}{
+		{"legacy", "", "", "", true},
+		{"jev proxy", "jev", "https://proxy.example/typesafe", "jev-1.13.0", true},
+		{"laya", "laya", "http://laya:8000", "convaiinnovations/laya-multilingual", true},
+		{"laya defaults", "laya", "http://laya:8000", "", true},
+		{"no endpoint", "laya", "", "", false},
+		{"wrong model", "laya", "http://laya:8000", "jev-latest", false},
+		{"unknown provider", "other", "", "", false},
+		{"credentials in URL", "jev", "https://u:secret@example.com", "", false},
+		{"query in URL", "jev", "https://example.com?key=secret", "", false},
+		{"invalid URL", "laya", "file:///tmp/laya", "", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg, err := Parse(nil, env(map[string]string{
+				"TADMIN_BOT_TOKEN": "1:abc", "TADMIN_OWNER_ID": "42",
+				"TADMIN_TYPESAFE_PROVIDER": tc.provider, "TADMIN_TYPESAFE_BASE_URL": tc.base,
+				"TADMIN_TYPESAFE_MODEL": tc.model, "TADMIN_TYPESAFE_API_KEY": "local-test-key",
+			}))
+			if (err == nil) != tc.valid {
+				t.Fatalf("valid=%v err=%v", tc.valid, err)
+			}
+			if err != nil && strings.Contains(err.Error(), "secret") {
+				t.Fatal("URL credential leaked")
+			}
+			if err == nil && (cfg.TypeSafeBaseURL != tc.base || cfg.TypeSafeModel != tc.model || cfg.TypeSafeAPIKey != "local-test-key") {
+				t.Fatal("AI settings lost")
+			}
+			if tc.name == "legacy" && cfg.TypeSafeProvider != "jev" {
+				t.Fatal("legacy backend changed")
+			}
+		})
+	}
+}
+
 func TestValidation(t *testing.T) {
 	_, err := Parse([]byte(`owner_id = 0
 [web]

@@ -82,9 +82,27 @@
     {
       "name": "TADMIN_TYPESAFE_API_KEY",
       "group": "ai",
-      "desc": "可选。TypeSafe Jev API Key，启用 AI 入群资料风险提示（只升级处理，绝不自动放行或封禁）。",
+      "desc": "可选。Jev API Key 或自部署 Laya 的本地 Bearer 密钥；未设置时禁用 AI。Laya 首阶段仅提示。",
       "example": "ts_…",
       "secret": true
+    },
+    {
+      "name": "TADMIN_TYPESAFE_PROVIDER",
+      "group": "ai",
+      "desc": "AI 后端：jev（默认）或 laya。Laya 强制仅提示，即使群设置为 review 也不会升级审核。",
+      "example": "jev"
+    },
+    {
+      "name": "TADMIN_TYPESAFE_BASE_URL",
+      "group": "ai",
+      "desc": "API 基础地址，不带 /v1/systemone。Jev 默认 https://api.typesafe.ai；Laya 必填，不自动回退到云端。",
+      "example": "http://laya:8000"
+    },
+    {
+      "name": "TADMIN_TYPESAFE_MODEL",
+      "group": "ai",
+      "desc": "Jev 默认 jev-latest；Laya 默认且仅允许 convaiinnovations/laya-multilingual（或 multilingual）。",
+      "example": "convaiinnovations/laya-multilingual"
     },
     {
       "name": "TADMIN_BOT_API_URL",

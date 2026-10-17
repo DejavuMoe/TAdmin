@@ -103,6 +103,15 @@ func TestAssessRequestShapeAndParsing(t *testing.T) {
 	if gotBody["model"] != DefaultModel {
 		t.Errorf("model = %v", gotBody["model"])
 	}
+	if _, ok := gotBody["max_len"]; ok {
+		t.Error("Laya budget sent to Jev")
+	}
+	if _, ok := gotBody["head_max_len"]; ok {
+		t.Error("Laya head budget sent to Jev")
+	}
+	if a.HintOnly {
+		t.Error("Jev unexpectedly forced to hint-only")
+	}
 	qs, _ := gotBody["questions"].(map[string]any)
 	if len(qs) != len(questions) {
 		t.Errorf("questions = %d, want %d", len(qs), len(questions))

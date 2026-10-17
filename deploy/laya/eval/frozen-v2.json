@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-18",
+  "model_revision": "1720e3e3357cfe1e281542e223f8273b0890ca34",
+  "files": {
+    "eval/profiles.jsonl": "0be2d4102153df375a2cdd8a41286938961b67fd63cb868877d50000cb2273e8",
+    "eval/profiles-new-v2.jsonl": "1cc17be281589a08d06dc3e1cacfa37e4d7e488f901719ec320017b44bfd0c81",
+    "eval/protocol-v2.md": "061ece62481ee06f51b29a908b87c850c32173a13defdc4371892e0cd79be90c",
+    "eval/short-noul-v2.json": "edf485e80826386b66f0839622f2f5725c27566ea08fa03592e0d8a7928319c9",
+    "eval/frozen.json": "d58110221d53752a3b7a00aab3d9cf1c793b4f6d0e3e7ddb24c9b33cfae8e9cd",
+    "diagnose.py": "6cc6b63b9f1ae80abfded99240df8e196aacd3efb18b78961adcaad47b5e473c",
+    "evaluate.py": "5d4598ed9423222181e7b561bc34be82d5e7858d0ef5e3aac706cfd504bd9108",
+    "evaluate_v2.py": "c17d4ad7a9e18869ab7bcbfe0b50ff625400f43ab80dd1b96ee17742e0286b45",
+    "test_evaluate_v2.py": "4cd735d8f81027e1783202f4b0aa7edfee8bbf1f78f1234f685ce1d17796bc84"
+  },
+  "thresholds": [
+    0.5,
+    0.85
+  ],
+  "annotation": "assistant-authored before inference; v2 fixed before new samples; synthetic challenge set, not independent human validation"
+}

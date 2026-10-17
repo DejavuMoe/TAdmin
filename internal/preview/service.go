@@ -41,19 +41,19 @@ type Config struct {
 
 // Service is the preview refresher.
 type Service struct {
-	cfg  Config
-	st   *store.Store
-	log  *slog.Logger
-	now  func() time.Time
-	wake chan struct{}
-	lane sync.Mutex // one refresh at a time
+	cfg     Config
+	st      *store.Store
+	log     *slog.Logger
+	now     func() time.Time
+	wake    chan struct{}
+	lane    sync.Mutex // one refresh at a time
+	sources sync.Mutex // baseline creation and source checks share one lane
 
 	mu          sync.Mutex
 	floodUntil  time.Time
 	lastRefresh time.Time
 	nextAt      time.Time
 	batch       batch
-	checking    map[int64]bool
 }
 
 type batch struct {
@@ -74,7 +74,7 @@ func New(cfg Config) *Service {
 	if cfg.Location == nil {
 		cfg.Location = time.Local
 	}
-	return &Service{cfg: cfg, st: cfg.Store, log: cfg.Logger, now: cfg.Now, wake: make(chan struct{}, 1), checking: map[int64]bool{}}
+	return &Service{cfg: cfg, st: cfg.Store, log: cfg.Logger, now: cfg.Now, wake: make(chan struct{}, 1)}
 }
 
 // Enabled reports whether refreshing is possible at all (userbot configured).
@@ -135,18 +135,8 @@ func (s *Service) checkLoop(ctx context.Context) {
 
 // Check fetches a source and records new/changed urls.
 func (s *Service) Check(ctx context.Context, src *store.PreviewSource) (store.ObserveResult, error) {
-	s.mu.Lock()
-	if s.checking[src.ID] {
-		s.mu.Unlock()
-		return store.ObserveResult{}, nil
-	}
-	s.checking[src.ID] = true
-	s.mu.Unlock()
-	defer func() {
-		s.mu.Lock()
-		delete(s.checking, src.ID)
-		s.mu.Unlock()
-	}()
+	s.sources.Lock()
+	defer s.sources.Unlock()
 	entries, doc, err := s.collect(ctx, src)
 	src.CheckedAt = s.now()
 	src.NextCheck = src.CheckedAt.Add(s.cfg.CheckInterval)
@@ -184,18 +174,28 @@ func (s *Service) Check(ctx context.Context, src *store.PreviewSource) (store.Ob
 
 // collect returns the entries of a source; nil entries mean "not modified".
 func (s *Service) collect(ctx context.Context, src *store.PreviewSource) ([]store.Observed, *feeds.Document, error) {
-	doc, err := s.cfg.Fetcher.Fetch(ctx, src.URL, feeds.Conditional{ETag: src.ETag, LastModified: src.LastModified})
+	conditional := feeds.Conditional{ETag: src.ETag, LastModified: src.LastModified}
+	if src.Kind == string(feeds.KindSitemapIndex) {
+		conditional = feeds.Conditional{} // an unchanged index does not mean its children are unchanged
+	}
+	doc, err := s.cfg.Fetcher.Fetch(ctx, src.URL, conditional)
 	if err != nil {
 		return nil, nil, err
 	}
 	if doc.NotModified {
 		return nil, doc, nil
 	}
+	if !doc.Kind.IsSource() {
+		return nil, nil, feeds.ErrUnsupported
+	}
 	var entries []feeds.Entry
 	if doc.Kind == feeds.KindSitemapIndex {
 		w, err := s.cfg.Fetcher.Walk(ctx, src.URL, feeds.DefaultMaxWalkURLs)
 		if err != nil {
 			return nil, nil, err
+		}
+		if w.Truncated || len(w.Errors) > 0 {
+			return nil, nil, fmt.Errorf("incomplete sitemap walk: %d errors, truncated=%t", len(w.Errors), w.Truncated)
 		}
 		entries = w.Entries
 	} else {
@@ -216,6 +216,8 @@ func (s *Service) Discover(ctx context.Context, rawURL string) ([]feeds.Candidat
 // Add registers a source and records its current urls. With queueExisting
 // all current urls are queued once; otherwise only future changes are.
 func (s *Service) Add(ctx context.Context, c feeds.Candidate, queueExisting bool) (*store.PreviewSource, store.ObserveResult, error) {
+	s.sources.Lock()
+	defer s.sources.Unlock()
 	src, created, err := s.st.AddSource(ctx, c.URL, string(c.Kind), truncate(c.Title, 100))
 	if err != nil {
 		return nil, store.ObserveResult{}, err
@@ -227,8 +229,8 @@ func (s *Service) Add(ctx context.Context, c feeds.Candidate, queueExisting bool
 	src.CheckedAt = s.now()
 	src.NextCheck = src.CheckedAt.Add(s.cfg.CheckInterval)
 	if err != nil {
-		src.LastError = truncate(err.Error(), 300)
-		_ = s.st.SaveSourceCheck(ctx, src)
+		// A failed baseline must not turn into a future-only subscription.
+		err = errors.Join(err, s.st.DeleteSource(ctx, src.ID))
 		return src, store.ObserveResult{}, err
 	}
 	if doc != nil {
@@ -347,7 +349,7 @@ func (s *Service) tick(ctx context.Context) time.Duration {
 	}
 	if u.Priority == 0 && !u.RefreshedAt.IsZero() && s.now().Sub(u.RefreshedAt) < 24*time.Hour {
 		// Refreshed within a day: postpone rather than hammer .
-		_ = s.st.RetryURL(ctx, u.URL, u.RefreshedAt.Add(24*time.Hour), u.Reply)
+		_ = s.st.DeferURL(ctx, u.URL, u.RefreshedAt.Add(24*time.Hour), u.Reply)
 		return time.Second
 	}
 	s.lane.Lock()
@@ -360,7 +362,7 @@ func (s *Service) tick(ctx context.Context) time.Duration {
 	var fw *userbot.FloodWaitError
 	switch {
 	case errors.As(err, &fw):
-		_ = s.st.RetryURL(ctx, u.URL, s.now().Add(fw.Wait), "flood wait")
+		_ = s.st.DeferURL(ctx, u.URL, s.now().Add(fw.Wait), "flood wait")
 		s.log.Warn("preview refresh flood wait", "wait", fw.Wait)
 		return fw.Wait + 5*time.Second
 	case errors.Is(err, userbot.ErrNotReady):

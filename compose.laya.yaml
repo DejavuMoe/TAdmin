@@ -1,0 +1,67 @@
+# Optional CPU inference service. See docs/guide/laya.md.
+# docker compose --env-file .env --env-file .env.laya -f compose.yaml -f compose.laya.yaml ...
+services:
+  tadmin:
+    platform: ${LAYA_PLATFORM}
+    environment:
+      TADMIN_TYPESAFE_PROVIDER: laya
+      TADMIN_TYPESAFE_BASE_URL: http://laya:8000
+      TADMIN_TYPESAFE_MODEL: convaiinnovations/laya-multilingual
+      TADMIN_TYPESAFE_API_KEY: ${LAYA_API_KEY:?Set a local Laya API key in .env.laya}
+    networks: [default, ai]
+
+  laya:
+    platform: ${LAYA_PLATFORM}
+    build:
+      context: ${LAYA_BUILD_CONTEXT}
+    image: ${LAYA_IMAGE}
+    command: [laya-serve]
+    init: true
+    restart: unless-stopped
+    environment:
+      LAYA_DEVICE: cpu
+      LAYA_HOST: 0.0.0.0
+      LAYA_PORT: "8000"
+      LAYA_API_KEY: ${LAYA_API_KEY:?Set a local Laya API key in .env.laya}
+      LAYA_PRELOAD: "1"
+      LAYA_MODELS: multilingual
+      # Use the standalone repository, so LAYA_REVISION pins that exact artifact.
+      LAYA_EXTRA_MODELS: '{"multilingual":"convaiinnovations/laya-multilingual"}'
+      LAYA_REVISION: ${LAYA_REVISION}
+      LAYA_AUTO_TASK: "0"
+      LAYA_MAX_LOADED: "1"
+      LAYA_IDLE_UNLOAD_SECONDS: "0"
+      LAYA_JEV_STRICT: "0"
+      LAYA_THREADS: ${LAYA_THREADS}
+      OMP_NUM_THREADS: ${LAYA_THREADS}
+      LAYA_MAX_CONCURRENT: ${LAYA_MAX_CONCURRENT}
+      LAYA_MAX_TOKEN_BUDGET: "2048"
+    volumes:
+      - laya-cache:/home/laya/.cache/huggingface
+      - ./deploy/laya/smoke.py:/opt/tadmin/laya-smoke.py:ro
+    # No host port. The dedicated bridge retains outbound access for model download.
+    networks: [ai]
+    cpus: ${LAYA_CPUS}
+    mem_limit: ${LAYA_MEMORY}
+    pids_limit: 256
+    read_only: true
+    tmpfs: [/tmp:size=256m,mode=1777]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10m
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+networks:
+  ai:
+
+volumes:
+  laya-cache:

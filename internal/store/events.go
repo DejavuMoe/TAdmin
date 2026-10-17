@@ -68,6 +68,7 @@ type DayStats struct {
 func (s *Store) Stats(ctx context.Context, chatID int64, days int, loc *time.Location) ([]DayStats, error) {
 	now := s.now().In(loc)
 	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc).AddDate(0, 0, -(days - 1))
+	startDate := time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, time.UTC)
 	out := make([]DayStats, days)
 	for i := range out {
 		out[i] = DayStats{Day: start.AddDate(0, 0, i), Counts: map[string]int{}}
@@ -90,7 +91,7 @@ func (s *Store) Stats(ctx context.Context, chatID int64, days int, loc *time.Loc
 			return nil, err
 		}
 		t := time.Unix(at, 0).In(loc)
-		idx := int(time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc).Sub(start).Hours() / 24)
+		idx := int(time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC).Sub(startDate).Hours() / 24)
 		if idx < 0 || idx >= days {
 			continue
 		}

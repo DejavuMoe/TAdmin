@@ -11,7 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gotd/td/bin"
 	"github.com/gotd/td/session"
+	"github.com/gotd/td/telegram"
 	"github.com/gotd/td/telegram/auth"
 	"github.com/gotd/td/tg"
 	"github.com/gotd/td/tgerr"
@@ -148,6 +150,81 @@ func TestRenderQR(t *testing.T) {
 }
 
 type errStore struct{ err error }
+
+type revokedInvoker struct{}
+
+func (revokedInvoker) Invoke(context.Context, bin.Encoder, bin.Decoder) error {
+	return tgerr.New(401, "SESSION_REVOKED")
+}
+
+func TestOldClientCannotRevokeReplacementSession(t *testing.T) {
+	s := &memoryStore{data: []byte("replacement")}
+	m := New(Options{}, s)
+	m.client = telegram.NewClient(1, "test", telegram.Options{})
+	m.adapter = &sessionAdapter{store: s}
+	m.authorized = true
+	oldAPI := tg.NewClient(revokedInvoker{})
+	_, err := m.botPeer(context.Background(), oldAPI)
+	if !errors.Is(err, ErrAuthLost) {
+		t.Fatalf("expected revoked old client: %v", err)
+	}
+	data, _ := s.LoadSession(context.Background())
+	if !m.authorized || string(data) != "replacement" {
+		t.Fatal("old client cleared the replacement session")
+	}
+}
+
+func TestCancelledLoginCannotComplete(t *testing.T) {
+	m := New(Options{}, nil)
+	id := m.beginFlow(LoginQR, nil)
+	m.CancelLogin()
+	_, err := m.completeLogin(id, &tg.AuthAuthorization{User: &tg.User{ID: 42, FirstName: "Test"}})
+	if !errors.Is(err, ErrLoginCancelled) || m.authorized {
+		t.Fatalf("cancelled login authorized account: %v", err)
+	}
+}
+
+type delayedSessionStore struct {
+	memoryStore
+	started, release chan struct{}
+}
+
+func (s *delayedSessionStore) StoreSession(ctx context.Context, data []byte) error {
+	if len(data) > 0 {
+		close(s.started)
+		<-s.release
+	}
+	return s.memoryStore.StoreSession(ctx, data)
+}
+
+func TestLogoutWaitsForAdmittedSessionWrite(t *testing.T) {
+	s := &delayedSessionStore{started: make(chan struct{}), release: make(chan struct{})}
+	a := &sessionAdapter{store: s}
+	m := New(Options{}, s)
+	written := make(chan error, 1)
+	go func() { written <- a.StoreSession(context.Background(), []byte("session")) }()
+	<-s.started
+	cleared := make(chan error, 1)
+	go func() { cleared <- m.clearStore(context.Background(), a) }()
+	select {
+	case <-cleared:
+		close(s.release)
+		<-written
+		t.Fatal("logout cleared storage before an admitted write completed")
+	case <-time.After(50 * time.Millisecond):
+	}
+	close(s.release)
+	if err := <-written; err != nil {
+		t.Fatal(err)
+	}
+	if err := <-cleared; err != nil {
+		t.Fatal(err)
+	}
+	data, _ := s.LoadSession(context.Background())
+	if len(data) != 0 {
+		t.Fatal("session resurrected after logout")
+	}
+}
 
 func (s errStore) LoadSession(context.Context) ([]byte, error) { return nil, s.err }
 func (s errStore) StoreSession(context.Context, []byte) error  { return s.err }
@@ -369,7 +446,7 @@ func TestManagerFloodPrecheck(t *testing.T) {
 
 func TestObserveFloodSetsStatus(t *testing.T) {
 	m := New(Options{}, nil)
-	err := m.observe(tgerr.New(420, "FLOOD_WAIT_60"))
+	err := m.observe(nil, tgerr.New(420, "FLOOD_WAIT_60"))
 	var fw *FloodWaitError
 	if !errors.As(err, &fw) {
 		t.Fatalf("err = %v", err)

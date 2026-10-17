@@ -233,11 +233,11 @@ func (s *Store) SetLockdown(ctx context.Context, id int64, until time.Time) erro
 func (s *Store) MigrateChat(ctx context.Context, from, to int64) error {
 	return s.tx(ctx, func(tx *sql.Tx) error {
 		for _, q := range []string{
-			`UPDATE OR REPLACE chats SET chat_id = ? WHERE chat_id = ?`,
+			`UPDATE chats SET chat_id = ? WHERE chat_id = ?`,
 			`UPDATE events SET chat_id = ? WHERE chat_id = ?`,
-			`UPDATE OR IGNORE gates SET chat_id = ? WHERE chat_id = ?`,
-			`UPDATE OR IGNORE deletions SET chat_id = ? WHERE chat_id = ?`,
-			`UPDATE OR IGNORE channel_pins SET chat_id = ? WHERE chat_id = ?`,
+			`UPDATE gates SET chat_id = ? WHERE chat_id = ?`,
+			`UPDATE deletions SET chat_id = ? WHERE chat_id = ?`,
+			`UPDATE channel_pins SET chat_id = ? WHERE chat_id = ?`,
 		} {
 			if _, err := tx.ExecContext(ctx, q, to, from); err != nil {
 				return err

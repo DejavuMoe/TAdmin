@@ -119,3 +119,18 @@ func TestWalkFeedAndErrors(t *testing.T) {
 		t.Errorf("Walk(cancelled) err = %v, want context.Canceled", err)
 	}
 }
+
+func TestFailedChildrenConsumeFetchBudget(t *testing.T) {
+	children := make([]string, MaxWalkFetches+10)
+	for i := range children {
+		children[i] = fmt.Sprintf("/missing-%d", i)
+	}
+	srv, hits := newServer(t, map[string]http.HandlerFunc{"/index": serve("application/xml", sitemapIndex(children...))})
+	r, err := testFetcher(Options{}).Walk(context.Background(), srv.URL+"/index", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(hits.paths) > MaxWalkFetches || !r.Truncated {
+		t.Fatalf("failed requests bypassed budget: %d, truncated=%t", len(hits.paths), r.Truncated)
+	}
+}

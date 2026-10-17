@@ -3,6 +3,8 @@ package bot
 import (
 	"context"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -363,6 +365,64 @@ func TestSparklineAndDurations(t *testing.T) {
 	}
 }
 
+func TestInvalidModerationDurations(t *testing.T) {
+	for _, in := range []string{"1h30m", "12junk", "1.5h", "100000w", "0", "-1h", "99999999999999999999s"} {
+		if d, ok := parseDuration(in); ok {
+			t.Errorf("parseDuration(%q) accepted %v", in, d)
+		}
+	}
+}
+
+func TestBackupWithoutSystemTemp(t *testing.T) {
+	h := newHarness(t)
+	h.b.cfg.DataDir = t.TempDir()
+	for _, key := range []string{"TMPDIR", "TMP", "TEMP"} {
+		t.Setenv(key, filepath.Join(h.b.cfg.DataDir, "missing-system-temp"))
+	}
+	h.b.sendBackup(h.ctx)
+	if _, ok := h.srv.Last("sendDocument"); !ok {
+		t.Fatal("backup was not sent:", h.lastText())
+	}
+	entries, err := os.ReadDir(h.b.cfg.DataDir)
+	if err != nil || len(entries) != 0 {
+		t.Fatalf("temporary backup left behind: %v, %v", entries, err)
+	}
+}
+
+func TestUnpinSettingRequiresPinPermission(t *testing.T) {
+	h := newHarness(t)
+	h.addGroup(ownerID)
+	before, _ := h.st.GetChat(h.ctx, groupID)
+	h.callback(adminID, adminID, 10, "s:"+strconv.FormatInt(groupID, 10)+":cun")
+	after, _ := h.st.GetChat(h.ctx, groupID)
+	if before.Settings.Channel.Unpin != after.Settings.Channel.Unpin {
+		t.Fatal("moderator without pin rights changed unpin policy")
+	}
+}
+
+func TestWelcomeSessionRechecksChatAuthorization(t *testing.T) {
+	h := newHarness(t)
+	h.addGroup(ownerID)
+	if err := h.st.SetChatStatus(h.ctx, groupID, store.ChatPending); err != nil {
+		t.Fatal(err)
+	}
+	h.b.onSessionInput(h.ctx, &tg.Message{From: &tg.User{ID: adminID}, Text: "changed"}, &session{kind: "welcome_text", chatID: groupID})
+	c, _ := h.st.GetChat(h.ctx, groupID)
+	if c.Settings.Welcome.Text == "changed" {
+		t.Fatal("stale session edited a pending group")
+	}
+}
+
+func TestOldKeypadCannotModifyReplacementSession(t *testing.T) {
+	h := newHarness(t)
+	s := &session{kind: "code", chatID: 5, msgID: 200}
+	h.b.sessions.set(ownerID, s)
+	h.b.onKeypad(h.ctx, &tg.CallbackQuery{ID: "old", From: tg.User{ID: ownerID}}, "1", 100)
+	if s.code != "" {
+		t.Fatal("old keypad changed current login code")
+	}
+}
+
 func TestEntitiesToHTMLNesting(t *testing.T) {
 	cases := []struct {
 		text string
@@ -415,6 +475,25 @@ func TestPendingListNotLeakedToStrangers(t *testing.T) {
 		if strings.Contains(c.Str("text"), "Secret Newcomer") {
 			t.Fatal("pending list leaked to a stranger")
 		}
+	}
+}
+
+func TestPrivateDecisionCompletesBeforeUpdateBarrier(t *testing.T) {
+	h := newHarness(t)
+	h.addGroup(ownerID)
+	g := &store.Gate{ChatID: groupID, UserID: 5, Source: store.SourceRequest, State: store.StateReview, Seed: []byte("seed"), Token: "pending-barrier"}
+	if _, _, err := h.st.CreateGate(h.ctx, g); err != nil {
+		t.Fatal(err)
+	}
+	h.b.inline = false
+	started, release := make(chan struct{}), make(chan struct{})
+	h.b.serial(ownerID, func(context.Context) { close(started); <-release })
+	<-started
+	defer func() { close(release); h.b.bg.Wait() }()
+	h.b.process(h.ctx, []tg.Update{{UpdateID: 123, CallbackQuery: &tg.CallbackQuery{ID: "decide", From: tg.User{ID: ownerID}, Data: "q:" + strconv.FormatInt(g.ID, 10) + ":a", Message: &tg.Message{MessageID: 1, Chat: tg.Chat{ID: ownerID, Type: tg.ChatPrivate}}}}})
+	got, err := h.st.GetGate(h.ctx, g.ID)
+	if err != nil || got.Outcome != store.OutcomeApprove {
+		t.Fatalf("update barrier preceded the decision: %+v %v", got, err)
 	}
 }
 

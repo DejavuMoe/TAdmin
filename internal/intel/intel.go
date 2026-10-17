@@ -1,7 +1,7 @@
 // Package intel provides an optional, advisory risk assessment of the public
 // profile of an account that is joining a group.
 //
-// The assessment is produced by TypeSafe's System One model (Jev) through a
+// The assessment is produced by Jev or a self-hosted Laya server through a
 // handful of independent yes/no (Noul) judgments asked in one request. It is
 // strictly advisory: callers may use it to escalate handling (for example to
 // require manual review or a stricter challenge) and to show a hint on an
@@ -46,6 +46,8 @@ type Profile struct {
 
 // Assessment is the typed result of one assessment request.
 type Assessment struct {
+	// HintOnly prevents uncalibrated Laya results from escalating admission.
+	HintOnly bool
 	// Risk is the probability-like value in [0, 1] that the profile belongs to
 	// a spam, advertising, or scam account. It is the maximum of the serious
 	// signals (see RiskSignals): an "any serious violation" rule.
@@ -57,7 +59,7 @@ type Assessment struct {
 	// fixed label chosen by code, never model-generated text. It is empty when
 	// no request was made (profile without any text).
 	Reason string
-	// Model is the versioned model ID reported by the API.
+	// Model is Jev's model ID or Laya's routed checkpoint repository.
 	Model string
 	// Latency is the wall-clock duration of the API round trip.
 	Latency time.Duration
@@ -68,13 +70,15 @@ type Assessor interface {
 	Assess(ctx context.Context, p Profile) (Assessment, error)
 }
 
-// Options configures the TypeSafe-backed Assessor.
+// Options configures a Jev-compatible HTTP assessor.
 type Options struct {
+	// Provider defaults to jev. laya requires BaseURL and is hint-only.
+	Provider string
 	// APIKey is required. It is sent only as a bearer token.
 	APIKey string
-	// BaseURL defaults to DefaultBaseURL.
+	// BaseURL defaults to DefaultBaseURL for Jev; Laya requires an explicit URL.
 	BaseURL string
-	// Model defaults to DefaultModel.
+	// Model defaults to DefaultModel for Jev and LayaModel for Laya.
 	Model string
 	// Timeout bounds each Assess call; it defaults to DefaultTimeout.
 	Timeout time.Duration

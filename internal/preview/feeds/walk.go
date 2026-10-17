@@ -51,10 +51,11 @@ func (f *Fetcher) Walk(ctx context.Context, rawURL string, maxURLs int) (*WalkRe
 		return nil, fmt.Errorf("%w: %s is an HTML page, not a sitemap or feed", ErrUnsupported, doc.FinalURL)
 	}
 	w := &walker{
-		f:       f,
-		res:     &WalkResult{Kind: doc.Kind, Fetched: 1},
-		set:     newEntrySet(maxURLs),
-		visited: make(map[string]bool),
+		f:        f,
+		res:      &WalkResult{Kind: doc.Kind, Fetched: 1},
+		set:      newEntrySet(maxURLs),
+		visited:  make(map[string]bool),
+		attempts: 1,
 	}
 	w.markVisited(rawURL)
 	w.markVisited(doc.FinalURL)
@@ -68,11 +69,12 @@ func (f *Fetcher) Walk(ctx context.Context, rawURL string, maxURLs int) (*WalkRe
 }
 
 type walker struct {
-	f       *Fetcher
-	res     *WalkResult
-	set     *entrySet
-	visited map[string]bool
-	limited bool
+	f        *Fetcher
+	res      *WalkResult
+	set      *entrySet
+	visited  map[string]bool
+	limited  bool
+	attempts int
 }
 
 func (w *walker) markVisited(raw string) {
@@ -106,7 +108,7 @@ func (w *walker) consume(ctx context.Context, doc *Document, depth int) {
 			w.res.Truncated = true
 			return
 		}
-		if w.res.Fetched >= MaxWalkFetches {
+		if w.attempts >= MaxWalkFetches {
 			if !w.limited {
 				w.limited = true
 				w.res.Truncated = true
@@ -115,6 +117,7 @@ func (w *walker) consume(ctx context.Context, doc *Document, depth int) {
 			return
 		}
 		w.visited[child.URL] = true
+		w.attempts++
 		cdoc, err := w.f.Fetch(ctx, child.URL, Conditional{})
 		if err != nil {
 			w.res.Errors = append(w.res.Errors, fmt.Errorf("feeds: child sitemap %s: %w", child.URL, err))

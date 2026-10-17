@@ -191,7 +191,7 @@ func (b *Bot) handle(ctx context.Context, u *tg.Update) {
 		}
 	case u.CallbackQuery != nil:
 		cq := u.CallbackQuery
-		if cq.Message != nil && cq.Message.Chat.Type == tg.ChatPrivate && !strings.HasPrefix(cq.Data, "g:") {
+		if cq.Message != nil && cq.Message.Chat.Type == tg.ChatPrivate && !strings.HasPrefix(cq.Data, "g:") && !strings.HasPrefix(cq.Data, "q:") {
 			// Panel actions may be slow (feed discovery, backups); keep them
 			// off the update barrier so admissions are never delayed.
 			b.serial(cq.From.ID, func(ctx context.Context) { b.onCallback(ctx, cq) })

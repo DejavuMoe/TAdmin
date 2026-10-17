@@ -48,9 +48,12 @@ type Config struct {
 	Userbot Userbot `toml:"userbot"`
 	Preview Preview `toml:"preview"`
 
-	BotToken       string         `toml:"-"`
-	TypeSafeAPIKey string         `toml:"-"`
-	Location       *time.Location `toml:"-"`
+	BotToken         string         `toml:"-"`
+	TypeSafeAPIKey   string         `toml:"-"`
+	TypeSafeProvider string         `toml:"-"`
+	TypeSafeBaseURL  string         `toml:"-"`
+	TypeSafeModel    string         `toml:"-"`
+	Location         *time.Location `toml:"-"`
 }
 
 // Web configures the optional Mini App server.
@@ -85,12 +88,13 @@ func (c *Config) UserbotEnabled() bool { return c.Userbot.APIID > 0 && c.Userbot
 // Default returns a configuration with defaults applied.
 func Default() Config {
 	return Config{
-		DataDir:   "data",
-		Language:  "zh-CN",
-		Timezone:  "Local",
-		LogFormat: "json",
-		LogLevel:  "info",
-		Web:       Web{Listen: "127.0.0.1:8080"},
+		TypeSafeProvider: "jev",
+		DataDir:          "data",
+		Language:         "zh-CN",
+		Timezone:         "Local",
+		LogFormat:        "json",
+		LogLevel:         "info",
+		Web:              Web{Listen: "127.0.0.1:8080"},
 		Preview: Preview{
 			CheckInterval: Duration{6 * time.Hour},
 			MinGap:        Duration{45 * time.Second},
@@ -222,8 +226,17 @@ var EnvVars = []EnvVar{
 		Desc: "可选。与 api_id 配对的 api_hash。",
 		set:  func(c *Config, v string) error { c.Userbot.APIHash = v; return nil }},
 	{Name: "TADMIN_TYPESAFE_API_KEY", Group: "ai", Secret: true, Example: "ts_…",
-		Desc: "可选。TypeSafe Jev API Key，启用 AI 入群资料风险提示（只升级处理，绝不自动放行或封禁）。",
+		Desc: "可选。Jev API Key 或自部署 Laya 的本地 Bearer 密钥；未设置时禁用 AI。Laya 首阶段仅提示。",
 		set:  func(c *Config, v string) error { c.TypeSafeAPIKey = v; return nil }},
+	{Name: "TADMIN_TYPESAFE_PROVIDER", Group: "ai", Example: "jev",
+		Desc: "AI 后端：jev（默认）或 laya。Laya 强制仅提示，即使群设置为 review 也不会升级审核。",
+		set:  func(c *Config, v string) error { c.TypeSafeProvider = v; return nil }},
+	{Name: "TADMIN_TYPESAFE_BASE_URL", Group: "ai", Example: "http://laya:8000",
+		Desc: "API 基础地址，不带 /v1/systemone。Jev 默认 https://api.typesafe.ai；Laya 必填，不自动回退到云端。",
+		set:  func(c *Config, v string) error { c.TypeSafeBaseURL = v; return nil }},
+	{Name: "TADMIN_TYPESAFE_MODEL", Group: "ai", Example: "convaiinnovations/laya-multilingual",
+		Desc: "Jev 默认 jev-latest；Laya 默认且仅允许 convaiinnovations/laya-multilingual（或 multilingual）。",
+		set:  func(c *Config, v string) error { c.TypeSafeModel = v; return nil }},
 	{Name: "TADMIN_BOT_API_URL", TOML: "bot_api_url", Group: "advanced", Example: "http://127.0.0.1:8081",
 		Desc: "可选。自建 Local Bot API Server 的地址；默认 https://api.telegram.org。",
 		set:  func(c *Config, v string) error { c.BotAPIURL = v; return nil }},
@@ -252,6 +265,23 @@ func applyEnv(cfg *Config, lookup func(string) (string, bool)) error {
 // that `tadmin check` can explain it.
 func (c *Config) Validate() error {
 	var errs []error
+	if c.TypeSafeProvider != "jev" && c.TypeSafeProvider != "laya" {
+		errs = append(errs, errors.New("TADMIN_TYPESAFE_PROVIDER must be jev or laya"))
+	}
+	if c.TypeSafeProvider == "laya" {
+		if c.TypeSafeBaseURL == "" {
+			errs = append(errs, errors.New("TADMIN_TYPESAFE_BASE_URL is required for laya"))
+		}
+		if c.TypeSafeModel != "" && c.TypeSafeModel != "multilingual" && c.TypeSafeModel != "convaiinnovations/laya-multilingual" {
+			errs = append(errs, errors.New("TADMIN_TYPESAFE_MODEL must select laya-multilingual for laya"))
+		}
+	}
+	if c.TypeSafeBaseURL != "" {
+		u, err := url.Parse(c.TypeSafeBaseURL)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
+			errs = append(errs, errors.New("TADMIN_TYPESAFE_BASE_URL must be an http(s) base URL without credentials, query or fragment"))
+		}
+	}
 	if c.OwnerID <= 0 {
 		errs = append(errs, errors.New("owner_id (or TADMIN_OWNER_ID) must be your numeric Telegram user id — ask @userinfobot"))
 	}

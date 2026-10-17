@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-18",
+  "model_revision": "1720e3e3357cfe1e281542e223f8273b0890ca34",
+  "dataset_sha256": "0be2d4102153df375a2cdd8a41286938961b67fd63cb868877d50000cb2273e8",
+  "protocol_sha256": "f5325d7743f2bc296f60438cd63db1a36809bbc874a9ccaf674eea8c6f9ecc9e",
+  "candidate_source_sha256": "6cc6b63b9f1ae80abfded99240df8e196aacd3efb18b78961adcaad47b5e473c",
+  "evaluator_sha256": "5d4598ed9423222181e7b561bc34be82d5e7858d0ef5e3aac706cfd504bd9108",
+  "fixture_sha256": "8c7b90ac0f136ec850a5d38b561bf50e988aaa55f34c5ebcca2b30453af77e32",
+  "thresholds": [
+    0.5,
+    0.85
+  ],
+  "annotation": "assistant-authored before model inference; independent of Laya outputs, not independently human-reviewed"
+}

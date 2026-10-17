@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net/http"
 	"path"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -166,12 +167,6 @@ func (s *server) api(w http.ResponseWriter, r *http.Request) {
 		apiError(w, http.StatusNotFound, "invalid")
 		return
 	}
-	// Per-token limit: a real user needs a handful of requests; the proxy
-	// in front applies per-client limits.
-	if !s.limiter.allow(token) {
-		apiError(w, http.StatusTooManyRequests, "rate_limited")
-		return
-	}
 	var req apiRequest
 	body, err := io.ReadAll(io.LimitReader(r.Body, 32<<10))
 	if err != nil || json.Unmarshal(body, &req) != nil || len(req.Answer) > 9 {
@@ -181,6 +176,11 @@ func (s *server) api(w http.ResponseWriter, r *http.Request) {
 	init, err := ValidateInitData(req.InitData, s.cfg.BotToken, s.cfg.Now(), s.cfg.MaxInitAge)
 	if err != nil {
 		apiError(w, http.StatusForbidden, "forbidden")
+		return
+	}
+	// Public gate links and other users must not consume the newcomer's quota.
+	if !s.limiter.allow(token + ":" + strconv.FormatInt(init.UserID, 10)) {
+		apiError(w, http.StatusTooManyRequests, "rate_limited")
 		return
 	}
 	// Bound concurrent PNG renders.
@@ -209,6 +209,8 @@ func (s *server) api(w http.ResponseWriter, r *http.Request) {
 		apiError(w, http.StatusGone, "expired")
 	case errors.Is(err, gate.ErrStale):
 		apiError(w, http.StatusConflict, "stale")
+	case errors.Is(err, gate.ErrPending):
+		apiError(w, http.StatusServiceUnavailable, "pending")
 	case err != nil:
 		if !errors.Is(err, gate.ErrInvalid) {
 			s.cfg.Logger.Warn("mini app request failed", "action", action, "error", err)

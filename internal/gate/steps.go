@@ -102,6 +102,10 @@ func (e *Engine) restrictNow(ctx context.Context, id int64) {
 // restrictStep mutes the member, first recording any restriction an
 // administrator had applied. It reports whether the gate may proceed.
 func (e *Engine) restrictStep(ctx context.Context, chat *store.Chat, g *store.Gate) bool {
+	if !e.now().Before(g.Deadline) {
+		e.resolve(ctx, g, store.OutcomeCancel, 0)
+		return false
+	}
 	m, err := e.tg.GetChatMember(ctx, g.ChatID, g.UserID)
 	if err != nil {
 		if tg.IsPermanent(err) {
@@ -139,6 +143,10 @@ func (e *Engine) restrictStep(ctx context.Context, chat *store.Chat, g *store.Ga
 	if chat.Settings.Verify.OnFail == "review" {
 		until = until.Add(time.Duration(chat.Settings.Verify.ReviewTTL) * time.Second)
 	}
+	g.MuteUntil = until.Unix()
+	if err := e.st.SaveGate(ctx, g); err != nil {
+		return false
+	}
 	if err := e.tg.RestrictChatMember(ctx, g.ChatID, g.UserID, tg.Muted(), until); err != nil {
 		switch {
 		case tg.IsGone(err):
@@ -156,19 +164,19 @@ func (e *Engine) restrictStep(ctx context.Context, chat *store.Chat, g *store.Ga
 	return e.st.SaveGate(ctx, g) == nil
 }
 
-// ownMute reports whether a full mute on m is most likely left over from an
-// earlier TAdmin verification of the same user (e.g. they left mid-way).
+// ownMute matches the deadline of a previous TAdmin mute.
 func (e *Engine) ownMute(ctx context.Context, g *store.Gate, m *tg.ChatMember) bool {
 	if !permsAllFalse(m.ChatPermissions) {
 		return false
 	}
 	last, err := e.st.LastClosedGate(ctx, g.ChatID, g.UserID)
-	return err == nil && e.now().Sub(last.ClosedAt) < 24*time.Hour && last.Done(stepRestricted)
+	return err == nil && last.Done(stepRestricted) && last.MuteUntil > 0 && m.UntilDate == last.MuteUntil
 }
 
 func permsAllFalse(p tg.ChatPermissions) bool {
 	for _, v := range []*bool{p.CanSendMessages, p.CanSendAudios, p.CanSendDocuments, p.CanSendPhotos, p.CanSendVideos,
-		p.CanSendVideoNotes, p.CanSendVoiceNotes, p.CanSendPolls, p.CanSendOtherMessages, p.CanAddWebPagePreviews} {
+		p.CanSendVideoNotes, p.CanSendVoiceNotes, p.CanSendPolls, p.CanSendOtherMessages, p.CanAddWebPagePreviews,
+		p.CanReactToMessages, p.CanChangeInfo, p.CanInviteUsers, p.CanPinMessages, p.CanManageTopics} {
 		if v != nil && *v {
 			return false
 		}
@@ -178,6 +186,10 @@ func permsAllFalse(p tg.ChatPermissions) bool {
 
 // start restricts the newcomer, runs optional checks and delivers the challenge.
 func (e *Engine) start(ctx context.Context, g *store.Gate) {
+	if !e.now().Before(g.Deadline) {
+		e.resolve(ctx, g, store.OutcomeCancel, 0)
+		return
+	}
 	chat, err := e.st.GetChat(ctx, g.ChatID)
 	if err != nil || chat.Status == store.ChatLeft {
 		e.resolve(ctx, g, store.OutcomeCancel, 0)
@@ -191,9 +203,12 @@ func (e *Engine) start(ctx context.Context, g *store.Gate) {
 	if !g.Done(stepChecked) {
 		outcome := e.checks(ctx, chat, g)
 		g.Steps |= stepChecked
-		_ = e.st.SaveGate(ctx, g)
 		if outcome != "" {
 			e.resolve(ctx, g, outcome, 0)
+			return
+		}
+		if err := e.st.SaveGate(ctx, g); err != nil {
+			e.log.Error("save gate", "gate", g.ID, "error", err)
 			return
 		}
 	}
@@ -222,7 +237,7 @@ func (e *Engine) checks(ctx context.Context, chat *store.Chat, g *store.Gate) st
 		}
 	}
 	if v.AI != "off" && v.AI != "" && e.cfg.Assessor != nil {
-		p := intel.Profile{UserID: g.UserID, ViaRequest: g.Source != store.SourceJoin, ChatTitle: chat.Title}
+		p := intel.Profile{UserID: g.UserID, Bio: g.UserBio, ViaRequest: g.Source != store.SourceJoin, ChatTitle: chat.Title}
 		first, last := splitName(g.UserName)
 		p.FirstName, p.LastName, p.Username = first, last, g.UserUsername
 		ictx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -238,7 +253,7 @@ func (e *Engine) checks(ctx context.Context, chat *store.Chat, g *store.Gate) st
 			e.log.Warn("profile assessment failed", "error", err)
 		} else {
 			g.Risk, g.RiskReason = a.Risk, a.Reason
-			if v.AI == "review" && intel.Classify(a, intel.DefaultElevated, intel.DefaultHigh) == intel.LevelHigh {
+			if !a.HintOnly && v.AI == "review" && intel.Classify(a, intel.DefaultElevated, intel.DefaultHigh) == intel.LevelHigh {
 				g.Flags |= store.FlagHighRisk
 			}
 		}
@@ -287,8 +302,17 @@ func (e *Engine) toReview(ctx context.Context, chat *store.Chat, g *store.Gate, 
 		ttl = max(ttl, time.Hour)
 	}
 	if g.Source == store.SourceJoin && g.Done(stepRestricted) {
-		// Extend the mute to cover the review window.
-		_ = e.tg.RestrictChatMember(ctx, g.ChatID, g.UserID, tg.Muted(), e.now().Add(ttl+10*time.Minute))
+		// Never extend a restriction an administrator changed in the meantime.
+		if m, err := e.tg.GetChatMember(ctx, g.ChatID, g.UserID); err == nil && g.MuteUntil > 0 &&
+			m.Status == tg.StatusRestricted && m.UntilDate == g.MuteUntil && permsAllFalse(m.ChatPermissions) {
+			previous := g.MuteUntil
+			g.MuteUntil = e.now().Add(ttl + 10*time.Minute).Unix()
+			if err := e.st.SaveGate(ctx, g); err == nil {
+				if err := e.tg.RestrictChatMember(ctx, g.ChatID, g.UserID, tg.Muted(), time.Unix(g.MuteUntil, 0)); err != nil {
+					g.MuteUntil = previous
+				}
+			}
+		}
 	}
 	g.State, g.NextAt, g.Retries = store.StateReview, e.now().Add(ttl), 0
 	g.LastError = reason
@@ -393,14 +417,22 @@ func (e *Engine) act(ctx context.Context, chat *store.Chat, g *store.Gate) error
 
 // unrestrict lifts TAdmin's mute, restoring an earlier admin restriction.
 func (e *Engine) unrestrict(ctx context.Context, g *store.Gate) error {
+	m, err := e.tg.GetChatMember(ctx, g.ChatID, g.UserID)
+	if err != nil {
+		return err
+	}
+	// Legacy gates lack a recorded deadline; leave those mutes to expire.
+	if g.MuteUntil == 0 || m.Status != tg.StatusRestricted || m.UntilDate != g.MuteUntil || !permsAllFalse(m.ChatPermissions) {
+		return nil
+	}
 	if g.PrevPerms != "" {
 		var perms tg.ChatPermissions
 		if json.Unmarshal([]byte(g.PrevPerms), &perms) == nil {
 			until := time.Time{}
 			if g.PrevUntil > 0 {
 				until = time.Unix(g.PrevUntil, 0)
-				if until.Before(e.now().Add(5 * time.Minute)) {
-					// The old restriction has (nearly) expired: lift fully.
+				if !until.After(e.now().Add(30 * time.Second)) {
+					// Telegram interprets deadlines under 30 seconds as forever.
 					return e.tg.RestrictChatMember(ctx, g.ChatID, g.UserID, tg.AllPermissions(true), time.Time{})
 				}
 			}

@@ -4,14 +4,14 @@
 # `go test ./internal/docgen` 会失败，从而保证文档里的“已验证”永远有测试支撑。
 #
 # status:
-#   verified  已完成，行为完全由自动化测试覆盖（不依赖真实 Telegram 的特有表现）
+#   verified  关键路径有自动化回归，不代表所有边界或真实 Telegram 行为已被证明
 #   live      已完成且离线测试通过，但还需要在真实 Telegram 测试群中验收
 #   shipped   已在真实 Telegram 验收通过
 #   planned   规划中
 
 version = "v2.0.0-dev"
-updated = "2026-09-30"
-headline = "TAdmin 2 重写完成：全部功能已实现并通过离线测试与两轮独立代码审查，正在等待真实 Telegram 测试群验收。"
+updated = "2026-10-18"
+headline = "公开开源与首次部署准备中：采用 MIT、GitHub Actions 和双架构镜像检查；真实 Telegram、GitHub 首次运行与服务器试用尚待验收。"
 
 [[milestone]]
 title = "TAdmin 2 设计与重写"
@@ -20,22 +20,22 @@ status = "done"
 desc = "从零重写：自研 Bot API 客户端、持久化入群状态机、私聊按钮控制台、频道联动、预览刷新、Mini App。"
 
 [[milestone]]
-title = "两轮独立代码审查与修复"
+title = "早期代码审查与回归"
 date = "2026-09-28"
 status = "done"
-desc = "35 项问题全部修复并补齐回归测试，包括授权绕过、封禁时长退化为永久、验证绕过等。"
+desc = "早期修复记录保留；源码候选、复现结果和回归通过分开记录，不再用问题总数声明全面安全。"
 
 [[milestone]]
 title = "文档站与“代码即文档”同步"
 date = "2026-09-28"
 status = "done"
-desc = "VitePress 文档站上线；配置、命令、状态机、数据结构、测试统计与验证码样例均由 docgen 从代码生成。"
+desc = "VitePress 文档站已实现；配置、命令、状态机、数据结构、测试统计与验证码样例由 docgen 从代码生成。"
 
 [[milestone]]
 title = "工程基线：CI、Docker 镜像与发布构建"
-date = "2026-09-30"
-status = "done"
-desc = "Forgejo Actions 跑 gofmt、vet、race 测试、docgen 过期检查与文档站构建；打 v* 标签自动产出 linux amd64/arm64 二进制与校验和。各步骤已在同款容器中本地走通，待 Forgejo Runner 首次运行确认。"
+date = "2026-10-18"
+status = "next"
+desc = "切换为 GitHub Actions：Go 质量与竞态、CodeQL、依赖审计、Gitleaks、文档及 AMD64/ARM64 镜像检查；稳定标签通过后发布二进制与 GHCR。GitHub 首次镜像运行尚未验证。"
 
 [[milestone]]
 title = "真实 Telegram 测试群验收"
@@ -56,7 +56,7 @@ area = "verification"
 title = "浮层验证（仅本人可见的临时消息）"
 status = "live"
 tests = ["TestOverlayPassFlow", "TestPickToggleAndReset"]
-live = "Bot API 10.2 临时消息在 Android / iOS / 桌面客户端上的显示与送达；点击“开始验证”覆盖提示消息。"
+live = "Bot API 10.3 临时消息在 Android / iOS / 桌面客户端上的显示与送达；点击“开始验证”覆盖提示消息。"
 
 [[feature]]
 area = "verification"
@@ -136,6 +136,13 @@ title = "AI 入群资料风险提示（TypeSafe Jev）"
 status = "live"
 tests = ["TestAssessRequestShapeAndParsing", "TestAssessHTTPErrors", "TestClassify", "TestBuildStateTruncatesAndOmitsIdentifiers"]
 live = "在真实入群资料上评估阈值；中文广告资料的识别效果。"
+
+[[feature]]
+area = "verification"
+title = "自部署 Laya Multilingual（仅提示）"
+status = "live"
+tests = ["TestAIBackendConfig", "TestLayaContract", "TestAIAdmissionPolicy", "TestLayaPanelHintOnly"]
+live = "Oracle A1 原生推理延迟、真实入群资料准确率与提示体验；不启用自动处罚。"
 
 [[feature]]
 area = "verification"
@@ -247,7 +254,7 @@ tests = ["TestSingleInstanceLock", "TestGateUniqueOpenAndDue", "TestChatSettings
 
 [[feature]]
 area = "platform"
-title = "零配置启动（仅环境变量）与配置校验"
+title = "基础环境变量启动与配置校验"
 status = "verified"
 tests = ["TestEnvOnlyConfig", "TestSampleParses", "TestValidation"]
 

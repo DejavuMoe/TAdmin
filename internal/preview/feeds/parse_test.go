@@ -288,6 +288,13 @@ func TestParseJSONFeed(t *testing.T) {
 	})
 }
 
+func TestJSONFeedItemBudget(t *testing.T) {
+	body := `{"version":"https://jsonfeed.org/version/1.1","items":[` + strings.Repeat(`{},`, MaxEntriesPerFile) + `{}]}`
+	if _, err := Parse([]byte(body), "application/feed+json", "https://example.com/feed"); !errors.Is(err, ErrTooLarge) {
+		t.Fatalf("unbounded JSON item allocation accepted: %v", err)
+	}
+}
+
 func TestParseCharsets(t *testing.T) {
 	latin1Title := []byte("Caf\xe9 \xfcber")
 	tests := []struct {

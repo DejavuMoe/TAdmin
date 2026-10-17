@@ -1,6 +1,6 @@
 .git
 .codex
-.env
+.env*
 *.env
 config.toml
 config.docker.toml
@@ -12,6 +12,9 @@ dist
 *.log
 .agents
 .forgejo
+.github
+backups
+**/__pycache__
 node_modules
 docs
 *.md

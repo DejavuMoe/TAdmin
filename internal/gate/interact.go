@@ -30,6 +30,7 @@ var (
 	ErrForbidden = errors.New("forbidden")
 	ErrExpired   = errors.New("expired")
 	ErrStale     = errors.New("stale")
+	ErrPending   = errors.New("pending")
 )
 
 // submit checks a full answer and advances the gate. It returns the new
@@ -393,8 +394,6 @@ func (e *Engine) terminalView(g *store.Gate) *View {
 	switch {
 	case g.State == store.StateReview:
 		return &View{Status: StatusReview, Lang: g.Lang}
-	case g.State == store.StateNew:
-		return &View{Status: StatusChallenge, Lang: g.Lang}
 	case store.Positive(g.Outcome):
 		return &View{Status: StatusPassed, Lang: g.Lang}
 	case g.Outcome == store.OutcomeTimeout:
@@ -433,9 +432,12 @@ func (e *Engine) withWebGate(ctx context.Context, token string, userID int64, qu
 	if err != nil {
 		return nil, err
 	}
-	if g.State == store.StateNew && g.Source == store.SourceGuard {
+	if g.State == store.StateNew {
 		// The Mini App can open before the scheduler prepared the gate.
 		e.start(ctx, g)
+		if g.State == store.StateNew {
+			return nil, ErrPending
+		}
 	}
 	if g.Answering() && !e.now().Before(g.Deadline) {
 		e.resolve(ctx, g, store.OutcomeTimeout, 0)

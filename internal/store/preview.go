@@ -140,7 +140,10 @@ func (s *Store) DeleteSource(ctx context.Context, id int64) error {
 		if _, err := tx.ExecContext(ctx, `DELETE FROM preview_sources WHERE id = ?`, id); err != nil {
 			return err
 		}
-		_, err := tx.ExecContext(ctx, `DELETE FROM preview_urls WHERE source_id = ? AND state <> 'queued'`, id)
+		if _, err := tx.ExecContext(ctx, `DELETE FROM preview_urls WHERE source_id = ? AND state <> 'queued'`, id); err != nil {
+			return err
+		}
+		_, err := tx.ExecContext(ctx, `UPDATE preview_urls SET source_id = 0 WHERE source_id = ?`, id)
 		return err
 	})
 }
@@ -163,6 +166,12 @@ func (s *Store) ObserveURLs(ctx context.Context, sourceID int64, entries []Obser
 	var r ObserveResult
 	now := s.now().Unix()
 	err := s.tx(ctx, func(tx *sql.Tx) error {
+		var exists int
+		if err := tx.QueryRowContext(ctx, `SELECT 1 FROM preview_sources WHERE id = ?`, sourceID).Scan(&exists); errors.Is(err, sql.ErrNoRows) {
+			return ErrNotFound
+		} else if err != nil {
+			return err
+		}
 		for _, e := range entries {
 			var lastmod, refreshed int64
 			var state string
@@ -255,6 +264,12 @@ func (s *Store) FinishURL(ctx context.Context, url, state, result, reply string)
 // RetryURL requeues a url at a later time.
 func (s *Store) RetryURL(ctx context.Context, url string, at time.Time, reply string) error {
 	_, err := s.db.ExecContext(ctx, `UPDATE preview_urls SET queued_at=?, attempts=attempts+1, reply=? WHERE url=?`, at.Unix(), reply, url)
+	return err
+}
+
+// DeferURL postpones work without using an attempt for an untried refresh.
+func (s *Store) DeferURL(ctx context.Context, url string, at time.Time, reply string) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE preview_urls SET queued_at=?, reply=? WHERE url=?`, at.Unix(), reply, url)
 	return err
 }
 

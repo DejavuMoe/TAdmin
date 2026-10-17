@@ -113,6 +113,31 @@ func TestRateLimitPerToken(t *testing.T) {
 	}
 }
 
+func TestInvalidRequestsCannotExhaustUserQuota(t *testing.T) {
+	h := Handler(Config{BotToken: token, Engine: &fakeEngine{}, EnableApp: true})
+	path := "/api/v/abcdefghijklmnopqrstuv/open"
+	for i := 0; i < 60; i++ {
+		post(t, h, path, `{"init_data":"forged"}`)
+	}
+	other, _ := json.Marshal(SignInitData(token, 99, time.Now(), nil))
+	for i := 0; i < 60; i++ {
+		post(t, h, path, `{"init_data":`+string(other)+`}`)
+	}
+	own, _ := json.Marshal(SignInitData(token, 42, time.Now(), nil))
+	if code, _ := post(t, h, path, `{"init_data":`+string(own)+`}`); code != 200 {
+		t.Fatalf("other clients exhausted authenticated user's quota: %d", code)
+	}
+}
+
+func TestPendingGateIsRetryable(t *testing.T) {
+	h := Handler(Config{BotToken: token, Engine: &fakeEngine{err: gate.ErrPending}, EnableApp: true})
+	init, _ := json.Marshal(SignInitData(token, 42, time.Now(), nil))
+	code, body := post(t, h, "/api/v/abcdefghijklmnopqrstuv/open", `{"init_data":`+string(init)+`}`)
+	if code != http.StatusServiceUnavailable || body["error"] != "pending" {
+		t.Fatalf("pending response = %d %v", code, body)
+	}
+}
+
 func TestPagesAndHealth(t *testing.T) {
 	h := Handler(Config{BotToken: token, Engine: &fakeEngine{}, EnableApp: true, Version: "v9",
 		Health: func(context.Context) error { return nil }})

@@ -79,6 +79,8 @@ type Gate struct {
 	QueryID      string
 	PrevPerms    string
 	PrevUntil    int64
+	MuteUntil    int64
+	UserBio      string
 	PromptMsg    int
 	CaptchaChat  int64
 	CaptchaMsg   int
@@ -110,7 +112,7 @@ func (g *Gate) Answering() bool { return g.State == StateChallenge }
 const gateCols = `id, chat_id, user_id, source, state, outcome, delivery, kind, seed, gen, picks, attempts, max_attempts,
 deadline, next_at, steps, retries, last_error, token, user_name, user_username, lang, user_chat_id, query_id,
 prev_perms, prev_until, prompt_msg, captcha_chat, captcha_msg, eph_msg, review_chat, review_msg, join_msg,
-risk, risk_reason, flags, actor_id, created_at, updated_at, closed_at`
+risk, risk_reason, flags, actor_id, created_at, updated_at, closed_at, mute_until, user_bio`
 
 func scanGate(row interface{ Scan(...any) error }) (*Gate, error) {
 	var g Gate
@@ -119,7 +121,7 @@ func scanGate(row interface{ Scan(...any) error }) (*Gate, error) {
 		&g.Picks, &g.Attempts, &g.MaxAttempts, &deadline, &next, &g.Steps, &g.Retries, &g.LastError, &g.Token,
 		&g.UserName, &g.UserUsername, &g.Lang, &g.UserChatID, &g.QueryID, &g.PrevPerms, &g.PrevUntil, &g.PromptMsg,
 		&g.CaptchaChat, &g.CaptchaMsg, &g.EphMsg, &g.ReviewChat, &g.ReviewMsg, &g.JoinMsg, &g.Risk, &g.RiskReason,
-		&g.Flags, &g.ActorID, &created, &updated, &closed)
+		&g.Flags, &g.ActorID, &created, &updated, &closed, &g.MuteUntil, &g.UserBio)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -139,11 +141,11 @@ func (s *Store) CreateGate(ctx context.Context, g *Gate) (created bool, existing
 	res, err := s.db.ExecContext(ctx, `INSERT INTO gates(chat_id, user_id, source, state, outcome, delivery, kind, seed, gen, picks,
 attempts, max_attempts, deadline, next_at, steps, retries, last_error, token, user_name, user_username, lang, user_chat_id, query_id,
 prev_perms, prev_until, prompt_msg, captcha_chat, captcha_msg, eph_msg, review_chat, review_msg, join_msg, risk, risk_reason,
-flags, actor_id, created_at, updated_at, closed_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)`,
+flags, actor_id, created_at, updated_at, closed_at, mute_until, user_bio) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?)`,
 		g.ChatID, g.UserID, g.Source, g.State, g.Outcome, g.Delivery, g.Kind, g.Seed, g.Gen, g.Picks, g.Attempts, g.MaxAttempts,
 		unixTime(g.Deadline), unixTime(g.NextAt), g.Steps, g.Retries, g.LastError, g.Token, g.UserName, g.UserUsername, g.Lang,
 		g.UserChatID, g.QueryID, g.PrevPerms, g.PrevUntil, g.PromptMsg, g.CaptchaChat, g.CaptchaMsg, g.EphMsg, g.ReviewChat,
-		g.ReviewMsg, g.JoinMsg, g.Risk, g.RiskReason, g.Flags, g.ActorID, now.Unix(), now.Unix())
+		g.ReviewMsg, g.JoinMsg, g.Risk, g.RiskReason, g.Flags, g.ActorID, now.Unix(), now.Unix(), g.MuteUntil, g.UserBio)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			ex, gerr := s.OpenGateFor(ctx, g.ChatID, g.UserID)
@@ -163,14 +165,14 @@ func (s *Store) SaveGate(ctx context.Context, g *Gate) error {
 	if g.State == StateClosed && g.ClosedAt.IsZero() {
 		g.ClosedAt = g.UpdatedAt
 	}
-	_, err := s.db.ExecContext(ctx, `UPDATE gates SET state=?, outcome=?, delivery=?, kind=?, gen=?, picks=?, attempts=?, max_attempts=?,
+	_, err := s.db.ExecContext(ctx, `UPDATE gates SET source=?, state=?, outcome=?, delivery=?, kind=?, gen=?, picks=?, attempts=?, max_attempts=?,
 deadline=?, next_at=?, steps=?, retries=?, last_error=?, user_name=?, user_username=?, lang=?, user_chat_id=?, query_id=?,
 prev_perms=?, prev_until=?, prompt_msg=?, captcha_chat=?, captcha_msg=?, eph_msg=?, review_chat=?, review_msg=?, join_msg=?,
-risk=?, risk_reason=?, flags=?, actor_id=?, updated_at=?, closed_at=? WHERE id=?`,
-		g.State, g.Outcome, g.Delivery, g.Kind, g.Gen, g.Picks, g.Attempts, g.MaxAttempts, unixTime(g.Deadline), unixTime(g.NextAt),
+risk=?, risk_reason=?, flags=?, actor_id=?, updated_at=?, closed_at=?, mute_until=?, user_bio=? WHERE id=?`,
+		g.Source, g.State, g.Outcome, g.Delivery, g.Kind, g.Gen, g.Picks, g.Attempts, g.MaxAttempts, unixTime(g.Deadline), unixTime(g.NextAt),
 		g.Steps, g.Retries, g.LastError, g.UserName, g.UserUsername, g.Lang, g.UserChatID, g.QueryID, g.PrevPerms, g.PrevUntil,
 		g.PromptMsg, g.CaptchaChat, g.CaptchaMsg, g.EphMsg, g.ReviewChat, g.ReviewMsg, g.JoinMsg, g.Risk, g.RiskReason,
-		g.Flags, g.ActorID, g.UpdatedAt.Unix(), unixTime(g.ClosedAt), g.ID)
+		g.Flags, g.ActorID, g.UpdatedAt.Unix(), unixTime(g.ClosedAt), g.MuteUntil, g.UserBio, g.ID)
 	return err
 }
 

@@ -1,13 +1,13 @@
 module tadmin
 
-go 1.27.0
+go 1.27.2
 
 require (
 	github.com/gotd/log v0.1.0
 	github.com/gotd/td v0.162.0
 	github.com/pelletier/go-toml/v2 v2.4.3
 	golang.org/x/image v0.46.0
-	golang.org/x/net v0.59.0
+	golang.org/x/net v0.60.0
 	golang.org/x/sys v0.48.0
 	golang.org/x/text v0.42.0
 	modernc.org/sqlite v1.59.0

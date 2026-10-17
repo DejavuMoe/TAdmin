@@ -585,9 +585,37 @@ func xmlDeclEncoding(data []byte) string {
 // ---- JSON Feed ----
 
 type jsonFeed struct {
-	Version string     `json:"version"`
-	Title   string     `json:"title"`
-	Items   []jsonItem `json:"items"`
+	Version string    `json:"version"`
+	Title   string    `json:"title"`
+	Items   jsonItems `json:"items"`
+}
+
+type jsonItems []jsonItem
+
+func (items *jsonItems) UnmarshalJSON(data []byte) error {
+	if bytes.Equal(bytes.TrimSpace(data), []byte("null")) {
+		return nil
+	}
+	d := json.NewDecoder(bytes.NewReader(data))
+	token, err := d.Token()
+	if err != nil {
+		return err
+	}
+	if token != json.Delim('[') {
+		return fmt.Errorf("items must be an array")
+	}
+	for d.More() {
+		if len(*items) >= MaxEntriesPerFile {
+			return ErrTooLarge
+		}
+		var item jsonItem
+		if err := d.Decode(&item); err != nil {
+			return err
+		}
+		*items = append(*items, item)
+	}
+	_, err = d.Token()
+	return err
 }
 
 type jsonItem struct {
@@ -602,7 +630,7 @@ type jsonItem struct {
 func parseJSONFeed(data []byte, base *url.URL) (*Document, error) {
 	var f jsonFeed
 	if err := json.Unmarshal(data, &f); err != nil {
-		return nil, fmt.Errorf("%w: invalid JSON: %v", ErrUnsupported, err)
+		return nil, fmt.Errorf("%w: invalid JSON: %w", ErrUnsupported, err)
 	}
 	if !strings.Contains(strings.ToLower(f.Version), "jsonfeed.org/version/") {
 		return nil, fmt.Errorf("%w: JSON document is not a JSON Feed", ErrUnsupported)

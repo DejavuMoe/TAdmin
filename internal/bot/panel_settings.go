@@ -148,6 +148,9 @@ func (b *Bot) cleanScreen(ctx context.Context, c *store.Chat, lang string) scree
 
 func (b *Bot) securityScreen(ctx context.Context, c *store.Chat, lang string) screen {
 	s := c.Settings
+	if b.cfg.TypeSafeProvider == "laya" && s.Verify.AI == "review" {
+		s.Verify.AI = "hint"
+	}
 	id := itoa(c.ID)
 	var sb strings.Builder
 	sb.WriteString(t(lang, "security_title", tg.Esc(c.Title)))
@@ -185,6 +188,10 @@ func (b *Bot) onSetting(ctx context.Context, cq *tg.CallbackQuery, chatID int64,
 		return
 	}
 	dir, _ := strconv.Atoi(value)
+	if field == "cun" && !b.canPin(ctx, chatID, cq.From.ID) {
+		b.answer(ctx, cq, t(lang, "need_pin_right"), true)
+		return
+	}
 	if field == "ai" && !b.AIReady {
 		b.answer(ctx, cq, t(lang, "ai_unavailable"), true)
 		return
@@ -223,7 +230,11 @@ func (b *Bot) onSetting(ctx context.Context, cq *tg.CallbackQuery, chatID int64,
 		case "cas":
 			v.CAS = !v.CAS
 		case "ai":
-			v.AI = cycle(aiModes, v.AI)
+			if b.cfg.TypeSafeProvider == "laya" {
+				v.AI = cycle([]string{"off", "hint"}, v.AI)
+			} else {
+				v.AI = cycle(aiModes, v.AI)
+			}
 		case "wen":
 			s.Welcome.Enabled = !s.Welcome.Enabled
 		case "weph":

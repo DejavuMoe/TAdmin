@@ -314,7 +314,10 @@ func (m *Manager) runOnce(ctx context.Context) error {
 			// The stored key is no longer bound to an account (logged out
 			// elsewhere, revoked, ...): start over with a fresh key.
 			m.log.Info("stored session is no longer authorized, clearing it")
-			if err := m.clearStore(ctx, adapter); err != nil {
+			m.mu.Lock()
+			err := m.clearStore(ctx, adapter)
+			m.mu.Unlock()
+			if err != nil {
 				return err
 			}
 			return &restartSignal{}
@@ -356,15 +359,18 @@ func (m *Manager) requestRestart() {
 }
 
 // clearStore disables adapter (so its client cannot write the old session
-// back) and clears the persisted session.
+// back) and clears the persisted session. m.mu must be held.
 func (m *Manager) clearStore(ctx context.Context, adapter *sessionAdapter) error {
 	if adapter != nil {
+		adapter.writeMu.Lock()
+		defer adapter.writeMu.Unlock()
 		adapter.disabled.Store(true)
 	}
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), sessionClearLimit)
 	defer cancel()
 	if err := m.store.StoreSession(ctx, nil); err != nil {
-		m.setLastError(err)
+		m.lastErr = err.Error()
+		m.notifyLocked()
 		return err
 	}
 	return nil
@@ -386,6 +392,7 @@ func (m *Manager) stateLocked() State {
 
 // detachLocked forgets the current client; m.mu must be held.
 func (m *Manager) detachLocked() {
+	m.cancelLoginLocked()
 	m.client = nil
 	m.connected = false
 	m.authKnown = false
@@ -434,7 +441,7 @@ func (m *Manager) waitConnected(ctx context.Context) (*telegram.Client, State, e
 
 // observe maps err and applies state side effects (flood wait bookkeeping,
 // revoked sessions).
-func (m *Manager) observe(err error) error {
+func (m *Manager) observe(api *tg.Client, err error) error {
 	mapped := mapError(err)
 	if mapped == nil {
 		return nil
@@ -450,16 +457,16 @@ func (m *Manager) observe(err error) error {
 		m.log.Warn("flood wait", "wait", fw.Wait)
 	}
 	if errors.Is(mapped, ErrAuthLost) {
-		m.onAuthLost(mapped)
+		m.onAuthLost(api, mapped)
 	}
 	return mapped
 }
 
 // onAuthLost handles a revoked authorization of a ready account.
-func (m *Manager) onAuthLost(cause error) {
+func (m *Manager) onAuthLost(api *tg.Client, cause error) {
 	m.mu.Lock()
-	if !m.authorized {
-		m.mu.Unlock()
+	defer m.mu.Unlock()
+	if !m.authorized || m.client == nil || api != m.client.API() {
 		return
 	}
 	m.authorized = false
@@ -468,7 +475,6 @@ func (m *Manager) onAuthLost(cause error) {
 	m.lastErr = cause.Error()
 	adapter := m.adapter
 	m.notifyLocked()
-	m.mu.Unlock()
 
 	m.log.Warn("user session revoked, clearing it", "err", cause)
 	_ = m.clearStore(context.Background(), adapter)

@@ -153,7 +153,7 @@ func (b *Bot) onSessionInput(ctx context.Context, m *tg.Message, s *session) {
 	text := strings.TrimSpace(m.Text)
 	switch s.kind {
 	case "welcome_text", "welcome_buttons":
-		if !b.canManage(ctx, s.chatID, user.ID) {
+		if _, ok := b.chatFor(ctx, s.chatID, user.ID); !ok {
 			b.sessions.clear(user.ID)
 			return
 		}
@@ -333,7 +333,8 @@ func utf16Decode(u []uint16) string {
 // sendBackup sends a consistent database snapshot to the owner.
 func (b *Bot) sendBackup(ctx context.Context) {
 	lang := b.lang
-	dir, err := os.MkdirTemp("", "tadmin-backup-*")
+	// The scratch image has no writable system temp directory.
+	dir, err := os.MkdirTemp(filepath.Dir(b.cfg.DatabasePath()), "tadmin-backup-*")
 	if err != nil {
 		b.notifyOwner(ctx, t(lang, "backup_failed", tg.Esc(err.Error())), nil)
 		return

@@ -22,6 +22,7 @@ const (
 	// DefaultModel is the flagship-model alias. Pin a versioned ID such as
 	// "jev-1.13.0" once thresholds have been tuned against it.
 	DefaultModel = "jev-latest"
+	LayaModel    = "convaiinnovations/laya-multilingual"
 	// DefaultTimeout bounds one assessment; Jev typically answers in about
 	// 100 ms, and joins must not wait long on an advisory signal.
 	DefaultTimeout = 4 * time.Second
@@ -39,19 +40,34 @@ func NewTypeSafe(opts Options) (Assessor, error) {
 		return nil, ErrNoAPIKey
 	}
 	base := strings.TrimSpace(opts.BaseURL)
+	provider := strings.TrimSpace(opts.Provider)
+	if provider == "" {
+		provider = "jev"
+	}
+	if provider != "jev" && provider != "laya" {
+		return nil, errors.New("intel: provider must be jev or laya")
+	}
+	if provider == "laya" && base == "" {
+		return nil, errors.New("intel: laya requires an explicit base url")
+	}
 	if base == "" {
 		base = DefaultBaseURL
 	}
 	u, err := url.Parse(base)
-	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
-		return nil, fmt.Errorf("intel: invalid typesafe base url %q", base)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
+		return nil, errors.New("intel: invalid typesafe base url")
 	}
-	u.RawQuery, u.Fragment = "", ""
 	endpoint := strings.TrimRight(u.String(), "/") + systemOnePath
 
 	model := strings.TrimSpace(opts.Model)
 	if model == "" {
 		model = DefaultModel
+		if provider == "laya" {
+			model = LayaModel
+		}
+	}
+	if provider == "laya" && model != LayaModel && model != "multilingual" {
+		return nil, errors.New("intel: laya requires the multilingual model")
 	}
 	timeout := opts.Timeout
 	if timeout <= 0 {
@@ -62,6 +78,7 @@ func NewTypeSafe(opts Options) (Assessor, error) {
 		client = &http.Client{}
 	}
 	return &typeSafe{
+		provider: provider,
 		apiKey:   key,
 		endpoint: endpoint,
 		model:    model,
@@ -72,6 +89,7 @@ func NewTypeSafe(opts Options) (Assessor, error) {
 }
 
 type typeSafe struct {
+	provider string
 	apiKey   string
 	endpoint string
 	model    string
@@ -91,14 +109,25 @@ func (t *typeSafe) GoString() string { return t.String() }
 // Wire types for POST /v1/systemone.
 
 type systemOneRequest struct {
-	State     requestState            `json:"state"`
-	Model     string                  `json:"model"`
-	Questions map[string]noulQuestion `json:"questions"`
+	State      requestState            `json:"state"`
+	Model      string                  `json:"model"`
+	Questions  map[string]noulQuestion `json:"questions"`
+	MaxLen     int                     `json:"max_len,omitempty"`
+	HeadMaxLen int                     `json:"head_max_len,omitempty"`
 }
 
 type systemOneResponse struct {
 	Model   string                `json:"model"`
 	Answers map[string]wireAnswer `json:"answers"`
+	Usage   struct {
+		Truncated          *bool    `json:"truncated"`
+		StateTokensDropped int      `json:"state_tokens_dropped"`
+		TruncatedQuestions []string `json:"truncated_questions"`
+	} `json:"usage"`
+	Routing struct {
+		Model string `json:"model"`
+		Repo  string `json:"repo"`
+	} `json:"routing"`
 }
 
 type wireAnswer struct {
@@ -115,7 +144,12 @@ func (t *typeSafe) Assess(ctx context.Context, p Profile) (Assessment, error) {
 		return Assessment{Signals: map[string]float64{}}, nil
 	}
 
-	body, err := json.Marshal(systemOneRequest{State: state, Model: t.model, Questions: questions})
+	request := systemOneRequest{State: state, Model: t.model, Questions: questions}
+	if t.provider == "laya" {
+		// Allow room for instructions; upstream still caps each criterion at 48 tokens.
+		request.MaxLen, request.HeadMaxLen = 2048, 1024
+	}
+	body, err := json.Marshal(request)
 	if err != nil {
 		return Assessment{}, fmt.Errorf("intel: encode typesafe request: %w", err)
 	}
@@ -156,7 +190,7 @@ func (t *typeSafe) Assess(ctx context.Context, p Profile) (Assessment, error) {
 		return Assessment{}, fmt.Errorf("%w: body exceeds %d bytes", ErrMalformedResponse, maxResponseBody)
 	}
 
-	a, err := parseAssessment(raw)
+	a, err := parseAssessment(raw, t.provider == "laya")
 	if err != nil {
 		return Assessment{}, err
 	}
@@ -190,13 +224,21 @@ func isNetTimeout(err error) bool {
 
 // parseAssessment validates a documented response body and composes Risk as
 // the maximum of the serious signals.
-func parseAssessment(raw []byte) (Assessment, error) {
+func parseAssessment(raw []byte, laya bool) (Assessment, error) {
 	var resp systemOneResponse
 	if err := json.Unmarshal(raw, &resp); err != nil {
 		return Assessment{}, fmt.Errorf("%w: %v", ErrMalformedResponse, jsonErrorKind(err))
 	}
 	if resp.Answers == nil {
 		return Assessment{}, fmt.Errorf("%w: missing answers", ErrMalformedResponse)
+	}
+	if laya {
+		if resp.Routing.Model != "multilingual" || strings.TrimSpace(resp.Routing.Repo) == "" || resp.Usage.Truncated == nil {
+			return Assessment{}, fmt.Errorf("%w: missing laya metadata or wrong checkpoint", ErrMalformedResponse)
+		}
+		if *resp.Usage.Truncated || resp.Usage.StateTokensDropped != 0 || len(resp.Usage.TruncatedQuestions) != 0 {
+			return Assessment{}, fmt.Errorf("%w: laya input was truncated", ErrMalformedResponse)
+		}
 	}
 	signals := make(map[string]float64, len(questions))
 	for id := range questions {
@@ -218,6 +260,9 @@ func parseAssessment(raw []byte) (Assessment, error) {
 	}
 
 	a := Assessment{Signals: signals, Model: strings.TrimSpace(resp.Model)}
+	if laya {
+		a.HintOnly, a.Model = true, resp.Routing.Repo
+	}
 	a.Risk = -1
 	for _, id := range riskSignals {
 		if v := signals[id]; v > a.Risk {

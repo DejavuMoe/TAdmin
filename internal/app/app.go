@@ -82,7 +82,10 @@ func Run(ctx context.Context, cfg *config.Config, log *slog.Logger) error {
 
 	var assessor intel.Assessor
 	if cfg.TypeSafeAPIKey != "" {
-		assessor, err = intel.NewTypeSafe(intel.Options{APIKey: cfg.TypeSafeAPIKey})
+		assessor, err = intel.NewTypeSafe(intel.Options{
+			APIKey: cfg.TypeSafeAPIKey, Provider: cfg.TypeSafeProvider,
+			BaseURL: cfg.TypeSafeBaseURL, Model: cfg.TypeSafeModel,
+		})
 		if err != nil {
 			log.Warn("TypeSafe assessor disabled", "error", err)
 			assessor = nil

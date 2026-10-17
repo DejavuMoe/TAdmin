@@ -1,0 +1,60 @@
+{"id":"new-zh01","lang":"zh","name":"米粒","bio":"周末看展，平时写代码。","labels":[],"why":"新的普通爱好资料","slice":"ordinary"}
+{"id":"new-zh02","lang":"zh","name":"七喜🍀","bio":"","labels":[],"why":"普通装饰昵称及空简介","slice":"ordinary"}
+{"id":"new-zh03","lang":"zh","name":"小蒲","bio":"所谓保本高收益都是骗局，别信，更别充值。","labels":[],"why":"明确警告并拒绝收益骗局","slice":"anti_scam"}
+{"id":"new-zh04","lang":"zh","name":"山竹","bio":"有人说先转钱再领礼品？那是诈骗，请举报。","labels":[],"why":"引用诈骗话术并警告，不是招揽","slice":"anti_scam"}
+{"id":"new-zh05","lang":"zh","name":"路过的猫","bio":"我没有管理权限，遇到问题请联系版主。","labels":[],"why":"否认角色且提到他人版主","slice":"role_negative"}
+{"id":"new-zh06","lang":"zh","name":"小橙","bio":"有人冒充官方客服，我只是受害者。","labels":[],"why":"报告冒充经历而非自称客服","slice":"role_negative"}
+{"id":"new-zh07","lang":"zh","name":"纸船","bio":"私人频道里记日记，不邀请订阅。","labels":[],"why":"提及频道但明确无引流","slice":"channel_negative"}
+{"id":"new-zh08","lang":"zh","name":"镜头笔记","bio":"开了摄影教程频道，欢迎一起学构图。","group":"摄影交流","labels":[],"why":"频道推广与群主题一致","slice":"channel_negative"}
+{"id":"new-zh09","lang":"zh","name":"社区版主","bio":"","labels":["impersonation"],"why":"昵称本身声明版主角色","slice":"role_name"}
+{"id":"new-zh10","lang":"zh","name":"管理员小川","bio":"","labels":["impersonation"],"why":"个人名带明确管理头衔","slice":"role_name"}
+{"id":"new-zh11","lang":"zh","name":"官方申诉客服","bio":"","labels":["impersonation"],"why":"空简介的官方客服昵称","slice":"role_name"}
+{"id":"new-zh12","lang":"zh","name":"本群管理团队","bio":"欢迎新朋友。","labels":["impersonation"],"why":"普通欢迎语不消除昵称角色声明","slice":"role_name"}
+{"id":"new-zh13","lang":"zh","name":"小纪","username":"group_moderator","bio":"","labels":["impersonation"],"why":"用户名单独声明版主身份","slice":"role_username"}
+{"id":"new-zh14","lang":"zh","name":"新月","username":"official_help_team","bio":"周末在线。","labels":["impersonation"],"why":"用户名声明官方帮助团队","slice":"role_username"}
+{"id":"new-zh15","lang":"zh","name":"阿澄","last_name":"群管理员","bio":"","labels":["impersonation"],"why":"角色写在姓字段","slice":"role_name"}
+{"id":"new-zh16","lang":"zh","name":"松木","bio":"负责这个群的管理，我是版主。","labels":["impersonation"],"why":"简介中的明确角色声明","slice":"role_bio"}
+{"id":"new-zh17","lang":"zh","name":"优惠快报","bio":"订阅我的球鞋折扣频道，每天更新。","labels":["promotion"],"why":"无关折扣频道招揽","slice":"channel_positive"}
+{"id":"new-zh18","lang":"zh","name":"阿满","bio":"欢迎加入我的租房信息群。","labels":["promotion"],"why":"无关群引流","slice":"channel_positive"}
+{"id":"new-zh19","lang":"zh","name":"订阅家电促销频道","bio":"","labels":["promotion"],"why":"引流仅出现在昵称","slice":"channel_positive"}
+{"id":"new-zh20","lang":"zh","name":"每日奶茶","bio":"来我的频道领取饮品优惠券。","group":"摄影交流","labels":["promotion"],"why":"与摄影无关的优惠频道","slice":"channel_positive"}
+{"id":"new-zh21","lang":"zh","name":"图册","bio":"加入我的壁纸频道，看每日更新。","labels":["promotion"],"why":"免费内容频道也属于无关推广","slice":"channel_positive"}
+{"id":"new-zh22","lang":"zh","name":"小麦","bio":"我的烘焙团购群招新，私聊进群。","labels":["promotion"],"why":"无关商品团购群引流","slice":"channel_positive"}
+{"id":"new-zh23","lang":"zh","name":"收益顾问","bio":"跟我存币，保证每周翻倍收益。","labels":["promotion","scam"],"why":"新的保证收益招揽","slice":"scam_positive"}
+{"id":"new-zh24","lang":"zh","name":"下注大厅","bio":"来玩轮盘，开户送体验金。","labels":["promotion","scam"],"why":"赌博而非提醒","slice":"scam_positive"}
+{"id":"new-zh25","lang":"zh","name":"兑付服务","bio":"提供 USDT 场外兑换和代付。","labels":["promotion","scam"],"why":"现有策略中的承兑代付","slice":"scam_positive"}
+{"id":"new-zh26","lang":"zh","name":"福利使者","bio":"并非骗局，先交押金就能领免费代币。","labels":["promotion","scam"],"why":"自称不是骗局不能取消实际付费招揽","slice":"scam_positive"}
+{"id":"new-zh27","lang":"zh","name":"付费私拍","bio":"售卖色情写真，私聊购买。","labels":["promotion","adult"],"why":"新的色情售卖内容","slice":"adult_control"}
+{"id":"new-zh28","lang":"zh","name":"夜间私信","bio":"预约付费性服务，联系我。","labels":["promotion","adult"],"why":"性服务招揽","slice":"adult_control"}
+{"id":"new-zh29","lang":"zh","name":"🔥箱包仓🔥","bio":"箱包✅低价✅批发✅下单下单✅","labels":["promotion","ad_formatting"],"why":"密集符号与重复交易号召","slice":"format_control"}
+{"id":"new-zh30","lang":"zh","name":"[清洗][保养][维修]","bio":"马上预约！马上预约！","labels":["promotion","ad_formatting"],"why":"服务列表和重复号召","slice":"format_control"}
+{"id":"new-en01","lang":"en","name":"Felix","bio":"Board games, trains and homemade soup.","labels":[],"why":"Unseen ordinary hobbies","slice":"ordinary"}
+{"id":"new-en02","lang":"en","name":"Avery 🌙","bio":"","labels":[],"why":"Decorated personal name, no bio","slice":"ordinary"}
+{"id":"new-en03","lang":"en","name":"Rae","bio":"Avoid guaranteed return schemes. Do not fund them.","labels":[],"why":"Warning against investment scams","slice":"anti_scam"}
+{"id":"new-en04","lang":"en","name":"Ellis","bio":"'Pay first to win a prize' is a scam. Report it.","labels":[],"why":"Quoted solicitation rejected as a scam","slice":"anti_scam"}
+{"id":"new-en05","lang":"en","name":"Jules","bio":"I have no admin access. Please ask a moderator.","labels":[],"why":"Role denial and reference to someone else","slice":"role_negative"}
+{"id":"new-en06","lang":"en","name":"Indigo","bio":"A fake support agent contacted me. I'm just a member.","labels":[],"why":"Reports impersonation, claims no official role","slice":"role_negative"}
+{"id":"new-en07","lang":"en","name":"Wren","bio":"My private channel is a diary, not an invitation to join.","labels":[],"why":"Channel mention without solicitation","slice":"channel_negative"}
+{"id":"new-en08","lang":"en","name":"Frame notes","bio":"Join my photo tutorial channel to learn composition.","group":"Photography","labels":[],"why":"On-topic educational channel promotion","slice":"channel_negative"}
+{"id":"new-en09","lang":"en","name":"Community mod","bio":"","labels":["impersonation"],"why":"Role-only nickname and empty bio","slice":"role_name"}
+{"id":"new-en10","lang":"en","name":"Admin Rowan","bio":"","labels":["impersonation"],"why":"Personal name with admin title","slice":"role_name"}
+{"id":"new-en11","lang":"en","name":"Official appeals desk","bio":"","labels":["impersonation"],"why":"Official-service nickname","slice":"role_name"}
+{"id":"new-en12","lang":"en","name":"This group's mod team","bio":"Welcome, everyone.","labels":["impersonation"],"why":"Greeting does not negate role in nickname","slice":"role_name"}
+{"id":"new-en13","lang":"en","name":"Drew","username":"community_admin","bio":"","labels":["impersonation"],"why":"Username alone claims admin role","slice":"role_username"}
+{"id":"new-en14","lang":"en","name":"Riley","username":"official_service_team","bio":"Available in the evening.","labels":["impersonation"],"why":"Official role in username only","slice":"role_username"}
+{"id":"new-en15","lang":"en","name":"Blair","last_name":"Group moderator","bio":"","labels":["impersonation"],"why":"Staff role placed in last-name field","slice":"role_name"}
+{"id":"new-en16","lang":"en","name":"Sky","bio":"I moderate this community and handle member approvals.","labels":["impersonation"],"why":"Role described through responsibilities","slice":"role_bio"}
+{"id":"new-en17","lang":"en","name":"Shoe updates","bio":"Follow my sneaker deals channel for daily offers.","labels":["promotion"],"why":"Unrelated discount channel invitation","slice":"channel_positive"}
+{"id":"new-en18","lang":"en","name":"Flat finder","bio":"Come join my rental listings group.","labels":["promotion"],"why":"Unrelated group invitation","slice":"channel_positive"}
+{"id":"new-en19","lang":"en","name":"Follow appliance deals","bio":"","labels":["promotion"],"why":"Promotion appears only in nickname","slice":"channel_positive"}
+{"id":"new-en20","lang":"en","name":"Tea coupons","bio":"Visit my channel for drink vouchers.","group":"Photography","labels":["promotion"],"why":"Commercial channel unrelated to photography","slice":"channel_positive"}
+{"id":"new-en21","lang":"en","name":"Daily backgrounds","bio":"Follow my free wallpaper channel for fresh images.","labels":["promotion"],"why":"Free unrelated channel promotion still counts","slice":"channel_positive"}
+{"id":"new-en22","lang":"en","name":"Baking circle","bio":"My baking group buys in bulk. Message me to join.","labels":["promotion"],"why":"Unrelated group-buying recruitment","slice":"channel_positive"}
+{"id":"new-en23","lang":"en","name":"Yield guide","bio":"Deposit coins with me. Guaranteed double returns weekly.","labels":["promotion","scam"],"why":"Fresh guaranteed-profit offer","slice":"scam_positive"}
+{"id":"new-en24","lang":"en","name":"Roulette room","bio":"Open an account for roulette bets and a welcome bonus.","labels":["promotion","scam"],"why":"Gambling offer, not discussion","slice":"scam_positive"}
+{"id":"new-en25","lang":"en","name":"Settlement desk","bio":"Offering USDT over-the-counter exchange and proxy payments.","labels":["promotion","scam"],"why":"Services included by existing financial-risk policy","slice":"scam_positive"}
+{"id":"new-en26","lang":"en","name":"Token reward","bio":"Not a scam! Pay a deposit to receive free tokens.","labels":["promotion","scam"],"why":"Denial does not cancel the actual advance-fee offer","slice":"scam_positive"}
+{"id":"new-en27","lang":"en","name":"Private gallery","bio":"Porn photo sets available. Message to purchase.","labels":["promotion","adult"],"why":"New explicit sexual content sale","slice":"adult_control"}
+{"id":"new-en28","lang":"en","name":"After dark","bio":"Book paid sexual services by contacting me.","labels":["promotion","adult"],"why":"Sexual service offer","slice":"adult_control"}
+{"id":"new-en29","lang":"en","name":"🔥BAG OUTLET🔥","bio":"BAGS ✅ CHEAP ✅ BULK ✅ ORDER ORDER ✅","labels":["promotion","ad_formatting"],"why":"Dense symbols and repeated sales call","slice":"format_control"}
+{"id":"new-en30","lang":"en","name":"[CLEAN][POLISH][REPAIR]","bio":"BOOK TODAY! BOOK TODAY!","labels":["promotion","ad_formatting"],"why":"Service list with repeated advertising command","slice":"format_control"}

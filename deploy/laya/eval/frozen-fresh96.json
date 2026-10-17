@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-18",
+  "frozen_at": "2026-10-17T18:11:40.979969+00:00",
+  "expected_model": "jev-1.13.0",
+  "thresholds": [
+    0.5,
+    0.85
+  ],
+  "annotation": "assistant-authored before inference; no external human review; no whole-state repeats or verbatim example fields",
+  "files": {
+    "deploy/laya/eval/profiles-fresh96.jsonl": "f4cc2525d2adeb8cc2ed0cee96cd5fea58287705e68e9360ff059c4320aa19f0",
+    "deploy/laya/eval/protocol-fresh96.md": "96d77d53b888cfb0c410365211ba83a1dbfdbd948f61f8a2a1220386d920c726",
+    "deploy/laya/evaluate_jev_fresh.py": "83a6cdec2f06ffc21ba91e95dee55d6d0b3ed1e3966bd3046357f4d3973a8a4e",
+    "deploy/laya/test_evaluate_jev_fresh.py": "d993774e43aae07eb0f751cf6f2c959e73eea6fee34aacae3204c246d178189d",
+    "deploy/laya/evaluate.py": "5d4598ed9423222181e7b561bc34be82d5e7858d0ef5e3aac706cfd504bd9108",
+    "deploy/laya/evaluate_jev.py": "70d8974baca80006512d4e479210f1fa6a1adeaba9c9efafb93e6df058fe579b",
+    "deploy/laya/evaluate_jev_runtime.py": "365385e6a3f769415021eaeacca5782bd0b9e3891f43b13a9db1541ce1f890c7",
+    "internal/intel/questions.go": "c12c597eff693ef827cee62ba7c8dbe88de0b7e05a8f564d9f34e6f69c51d4fa",
+    "docs/diagnostics/runtime-2026-10-18-requests.json": "8c7b90ac0f136ec850a5d38b561bf50e988aaa55f34c5ebcca2b30453af77e32"
+  }
+}

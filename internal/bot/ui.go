@@ -3,7 +3,9 @@ package bot
 import (
 	"context"
 	"fmt"
+	"math"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -217,8 +219,8 @@ func parseDuration(s string) (time.Duration, bool) {
 	case 'w':
 		unit, s = 7*24*time.Hour, s[:len(s)-1]
 	}
-	var n int
-	if _, err := fmt.Sscanf(s, "%d", &n); err != nil || n <= 0 || n > 100000 {
+	n, err := strconv.ParseInt(s, 10, 64)
+	if err != nil || n <= 0 || n > 100000 || n > math.MaxInt64/int64(unit) {
 		return 0, false
 	}
 	return time.Duration(n) * unit, true

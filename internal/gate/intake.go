@@ -30,7 +30,7 @@ func (e *Engine) OnMemberUpdate(ctx context.Context, chat *store.Chat, u *tg.Cha
 		e.OnLeft(ctx, chat.ID, user.ID)
 		return
 	case !isJoin(u):
-		if u.OldChatMember.IsAdmin() != u.NewChatMember.IsAdmin() {
+		if u.OldChatMember.IsAdmin() || u.NewChatMember.IsAdmin() {
 			e.cfg.Roles.Invalidate(chat.ID)
 			if u.NewChatMember.IsAdmin() {
 				// Promoted while verifying: the admin is trusted now.
@@ -126,7 +126,16 @@ func (e *Engine) admitFrom(ctx context.Context, chat *store.Chat, user, actor *t
 		}
 		// A pending join request does not cover a direct join through
 		// another link: retire it and verify the member now.
-		e.cancelOpen(ctx, chat.ID, user.ID, 0)
+		unlock := e.lock(existing.ID)
+		old, err := e.st.GetGate(ctx, existing.ID)
+		if err == nil && old.Open() && old.Source != store.SourceJoin {
+			old.State, old.Outcome, old.ActorID = store.StateResolving, store.OutcomeCancel, 0
+			old.Steps |= stepAction // already in the group; do not retry the old request action
+			if err := e.st.SaveGate(ctx, old); err == nil {
+				e.finish(ctx, old)
+			}
+		}
+		unlock()
 	}
 
 	now := e.now()
@@ -277,7 +286,7 @@ func (e *Engine) OnJoinRequest(ctx context.Context, chat *store.Chat, r *tg.Chat
 		ChatID: chat.ID, UserID: r.From.ID, Source: source, State: store.StateNew, Delivery: store.DeliveryPrivate,
 		Kind: kind, Seed: newSeed(), Gen: 1, MaxAttempts: max(1, v.Attempts), Deadline: now.Add(timeout), NextAt: now.Add(time.Minute),
 		Token: newToken(), UserName: r.From.FullName(), UserUsername: r.From.Username, Lang: userLang(&r.From, lang),
-		UserChatID: r.UserChatID, QueryID: r.QueryID, Risk: -1,
+		UserChatID: r.UserChatID, QueryID: r.QueryID, UserBio: r.Bio, Risk: -1,
 	}
 	created, existing, err := e.st.CreateGate(ctx, g)
 	if err != nil {
@@ -329,6 +338,7 @@ func (e *Engine) repeatRequest(ctx context.Context, id int64, r *tg.ChatJoinRequ
 		return
 	}
 	g.UserChatID = r.UserChatID
+	g.UserBio = r.Bio
 	if r.QueryID != "" && r.QueryID != g.QueryID {
 		if g.Source == store.SourceGuard && e.tg.SendJoinRequestWebApp(ctx, r.QueryID, e.WebAppURL(g)) == nil {
 			g.QueryID = r.QueryID

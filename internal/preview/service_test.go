@@ -130,6 +130,27 @@ func TestDailyLimit(t *testing.T) {
 	}
 }
 
+func TestFloodWaitDoesNotConsumeFailureBudget(t *testing.T) {
+	ctx := context.Background()
+	st, err := store.OpenMemory(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	now := time.Date(2026, 10, 18, 12, 0, 0, 0, time.UTC)
+	st.SetClock(func() time.Time { return now })
+	ref := &fakeRefresher{flood: true}
+	svc := New(Config{Store: st, Refresher: ref, MinGap: time.Second, DailyLimit: 10, Location: time.UTC, Now: func() time.Time { return now }})
+	if _, err := svc.Enqueue(ctx, "https://example.com/page", false); err != nil {
+		t.Fatal(err)
+	}
+	svc.tick(ctx)
+	u, err := st.NextQueued(ctx, now.Add(time.Hour))
+	if err != nil || u.Attempts != 0 {
+		t.Fatalf("flood wait consumed a failure attempt: %+v %v", u, err)
+	}
+}
+
 func TestMinGapSurvivesWakeups(t *testing.T) {
 	ctx := context.Background()
 	st, _ := store.OpenMemory(ctx)

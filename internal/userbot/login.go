@@ -265,7 +265,7 @@ func (m *Manager) finishQR(fctx context.Context, client *telegram.Client, id uin
 		}
 		return QRResult{Err: ErrLoginCancelled}
 	}
-	mapped := m.observe(err)
+	mapped := m.observe(client.API(), err)
 	if errors.Is(mapped, errPasswordNeeded) {
 		hint := m.passwordHint(fctx, client)
 		ok := m.withFlow(id, func(f *loginFlow) {
@@ -307,7 +307,7 @@ func (m *Manager) StartPhoneLogin(ctx context.Context, phone string) (CodeInfo, 
 	})
 	if err != nil {
 		m.endFlow(id)
-		return CodeInfo{}, m.observe(err)
+		return CodeInfo{}, m.observe(client.API(), err)
 	}
 	switch s := sent.(type) {
 	case *tg.AuthSentCode:
@@ -378,7 +378,7 @@ func (m *Manager) SubmitCode(ctx context.Context, code string) (LoginResult, err
 		PhoneCode:     code,
 	})
 	if err != nil {
-		mapped := m.observe(err)
+		mapped := m.observe(client.API(), err)
 		switch {
 		case errors.Is(mapped, errPasswordNeeded):
 			hint := m.passwordHint(ctx, client)
@@ -446,7 +446,7 @@ func (m *Manager) SubmitPassword(ctx context.Context, password string) (LoginRes
 	a, err := client.Auth().Password(ctx, password)
 	if err != nil {
 		m.withFlow(id, func(f *loginFlow) { f.busy = false })
-		return LoginResult{}, m.observe(err)
+		return LoginResult{}, m.observe(client.API(), err)
 	}
 	self, err := m.completeLogin(id, a)
 	if err != nil {
@@ -477,9 +477,11 @@ func (m *Manager) completeLogin(id uint64, a *tg.AuthAuthorization) (*Self, erro
 	}
 	self := selfFromUser(u)
 	m.mu.Lock()
-	if m.login != nil && m.login.id == id {
-		m.login = nil
+	if m.login == nil || m.login.id != id {
+		m.mu.Unlock()
+		return nil, ErrLoginCancelled
 	}
+	m.login = nil
 	m.authorized = true
 	m.authKnown = true
 	m.self = self
@@ -505,15 +507,18 @@ func (m *Manager) Logout(ctx context.Context) error {
 
 	if client != nil && authorized && connected {
 		if _, err := client.API().AuthLogOut(ctx); err != nil && !isAuthLost(err) {
-			return m.observe(err)
+			return m.observe(client.API(), err)
 		}
 	}
 	m.mu.Lock()
+	defer m.mu.Unlock()
+	if client != m.client || adapter != m.adapter {
+		return ErrNotReady
+	}
 	m.authorized = false
 	m.self = nil
 	m.webpagePeer = nil
 	m.notifyLocked()
-	m.mu.Unlock()
 	if err := m.clearStore(ctx, adapter); err != nil {
 		return err
 	}

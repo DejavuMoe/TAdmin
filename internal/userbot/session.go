@@ -2,6 +2,7 @@ package userbot
 
 import (
 	"context"
+	"sync"
 	"sync/atomic"
 
 	"github.com/gotd/td/session"
@@ -20,6 +21,7 @@ type SessionStore interface {
 // client gets its own adapter so that a client being torn down after logout
 // cannot resurrect a cleared session: once disabled, writes are dropped.
 type sessionAdapter struct {
+	writeMu  sync.Mutex
 	store    SessionStore
 	loaded   atomic.Bool // a non-empty session was loaded
 	disabled atomic.Bool
@@ -45,6 +47,8 @@ func (a *sessionAdapter) LoadSession(ctx context.Context) ([]byte, error) {
 
 // StoreSession implements session.Storage.
 func (a *sessionAdapter) StoreSession(ctx context.Context, data []byte) error {
+	a.writeMu.Lock()
+	defer a.writeMu.Unlock()
 	if a.store == nil || a.disabled.Load() {
 		return nil
 	}

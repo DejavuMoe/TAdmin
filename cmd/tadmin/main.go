@@ -111,6 +111,9 @@ func check(cfg *config.Config) int {
 	fmt.Printf("  http listen   %s\n", cfg.Web.Listen)
 	fmt.Printf("  userbot       %s\n", onOff(cfg.UserbotEnabled(), "configured"))
 	fmt.Printf("  AI assessment %s\n", onOff(cfg.TypeSafeAPIKey != "", "configured"))
+	if cfg.TypeSafeAPIKey != "" && cfg.TypeSafeProvider == "laya" {
+		fmt.Println("  AI backend    laya (hint only; group review does not escalate)")
+	}
 	st, err := store.Open(context.Background(), cfg.DatabasePath())
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "✗ database:", err)

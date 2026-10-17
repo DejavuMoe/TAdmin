@@ -1,0 +1,96 @@
+{"id":"fresh-zh01","lang":"zh","name":"钉书针","bio":"","labels":[],"why":"Ordinary object nickname with no offer or role claim","slice":"ordinary"}
+{"id":"fresh-zh02","lang":"zh","name":"末班渡轮","bio":"","labels":[],"why":"Poetic nickname, empty bio is not evidence","slice":"ordinary"}
+{"id":"fresh-zh03","lang":"zh","name":"m09","bio":"","labels":[],"why":"Short alphanumeric nickname alone","slice":"ordinary"}
+{"id":"fresh-zh04","lang":"zh","name":"B612。","bio":"","labels":[],"why":"Unusual punctuation does not make advertising","slice":"ordinary"}
+{"id":"fresh-zh05","lang":"zh","name":"砂糖🪴","bio":"","labels":[],"why":"One decorative emoji, no commercial claim","slice":"ordinary"}
+{"id":"fresh-zh06","lang":"zh","name":"半页笔记","bio":"","labels":[],"why":"Personal nickname with no service list","slice":"ordinary"}
+{"id":"fresh-zh07","lang":"zh","name":"榫卯","bio":"博物馆修复实习生，最近在学补陶。","labels":[],"why":"Describes training and work without selling","slice":"ordinary"}
+{"id":"fresh-zh08","lang":"zh","name":"桥下雨声","bio":"每天坐同一班电车，喜欢录下车站声音。","labels":[],"why":"Personal routine and hobby","slice":"ordinary"}
+{"id":"fresh-zh09","lang":"zh","name":"环形山","bio":"做支付系统风控，不接私人资金业务。","labels":[],"why":"Financial occupation with explicit refusal of private services","slice":"ordinary"}
+{"id":"fresh-zh10","lang":"zh","name":"旧唱片","bio":"周末整理外婆留下的磁带。","labels":[],"why":"Personal archive activity, no promotion","slice":"ordinary"}
+{"id":"fresh-zh11","lang":"zh","name":"回声档案","bio":"领奖还要先交解冻费？别转，那是套钱。","labels":[],"why":"Warns against an advance-fee trick, does not offer it","slice":"anti_scam"}
+{"id":"fresh-zh12","lang":"zh","name":"石阶","bio":"别人贴的六倍收益截图我不信，也不替他们拉人。","labels":[],"why":"Rejects profit claim and recruitment","slice":"anti_scam"}
+{"id":"fresh-zh13","lang":"zh","name":"铅笔头","bio":"不外借银行卡收款，别再来问我。","labels":[],"why":"Refuses money-mule activity","slice":"anti_scam"}
+{"id":"fresh-zh14","lang":"zh","name":"山口信箱","bio":"链上质押稳赚的私信已拉黑，大家留个心眼。","labels":[],"why":"Reports blocking a profit solicitation","slice":"anti_scam"}
+{"id":"fresh-zh15","lang":"zh","name":"街角路标","bio":"被骗后别再付费找陌生人追回损失。","labels":[],"why":"Warns against paid recovery scams","slice":"anti_scam"}
+{"id":"fresh-zh16","lang":"zh","name":"雨后松针","bio":"索取助记词的人再像钱包工作人员也不要信。","labels":[],"why":"Anti-phishing warning mentions a role without claiming it","slice":"anti_scam"}
+{"id":"fresh-zh17","lang":"zh","name":"候车亭","bio":"我只是路过的成员，没有处理投诉的权限。","labels":[],"why":"Denies authority rather than claiming a role","slice":"role_negative"}
+{"id":"fresh-zh18","lang":"zh","name":"小舟旁观","bio":"不要把我当运营人员，活动安排请问群主。","labels":[],"why":"Explicitly rejects an organizational role","slice":"role_negative"}
+{"id":"fresh-zh19","lang":"zh","name":"斜杠线","bio":"曾写过版务工具，现在只潜水。","labels":[],"why":"Past tool work is not a current staff claim","slice":"role_negative"}
+{"id":"fresh-zh20","lang":"zh","name":"路边长椅","bio":"这不是客服号，售后请走商家的工单。","labels":[],"why":"Rejects support identity and refers elsewhere","slice":"role_negative"}
+{"id":"fresh-zh21","lang":"zh","name":"泥点","bio":"陶艺烧窑记录放在自己的频道，有兴趣可看。","group":"陶艺练习室","labels":[],"why":"Personal channel matches the group's ceramics topic","slice":"context_normal"}
+{"id":"fresh-zh22","lang":"zh","name":"白描本","bio":"我画的植物速写册可预约，带来群里交流。","group":"植物写生交流","labels":[],"why":"On-topic product promotion, plain sentence formatting","slice":"context_normal"}
+{"id":"fresh-zh23","lang":"zh","name":"小溪刻度","bio":"整理了徒步路线的纸质地图，群友可以来取。","group":"周末徒步路线","labels":[],"why":"Relevant group resource, no unrelated recruitment","slice":"context_normal"}
+{"id":"fresh-zh24","lang":"zh","name":"停云","bio":"这里只记读书笔记，不经营付费群。","labels":[],"why":"Personal notes and explicit denial of paid-group business","slice":"context_normal"}
+{"id":"fresh-zh25","lang":"zh","name":"旧琴调律预约","bio":"","labels":["promotion"],"why":"Nickname offers piano tuning unrelated to default group","slice":"name_only_risk"}
+{"id":"fresh-zh26","lang":"zh","name":"接毕业相册排版","bio":"","labels":["promotion"],"why":"Nickname solicits album design work","slice":"name_only_risk"}
+{"id":"fresh-zh27","lang":"zh","name":"宠物寄养请私敲","bio":"","labels":["promotion"],"why":"Nickname invites business contact for boarding","slice":"name_only_risk"}
+{"id":"fresh-zh28","lang":"zh","name":"订阅我的中古钟表台","bio":"","labels":["promotion"],"why":"Nickname invites subscription to an unrelated watch channel","slice":"name_only_risk"}
+{"id":"fresh-zh29","lang":"zh","name":"家用咖啡机代修","bio":"","labels":["promotion"],"why":"Nickname advertises appliance repair","slice":"name_only_risk"}
+{"id":"fresh-zh30","lang":"zh","name":"婚宴座位牌接稿","bio":"","labels":["promotion"],"why":"Nickname solicits paid design orders","slice":"name_only_risk"}
+{"id":"fresh-zh31","lang":"zh","name":"银行卡代收招人","bio":"","labels":["promotion","scam"],"why":"Nickname recruits money-mule collection services","slice":"name_only_risk"}
+{"id":"fresh-zh32","lang":"zh","name":"赛马下注开户","bio":"","labels":["promotion","scam"],"why":"Nickname offers gambling account opening","slice":"name_only_risk"}
+{"id":"fresh-zh33","lang":"zh","name":"锁仓日息八厘","bio":"","labels":["promotion","scam"],"why":"Nickname offers daily investment returns","slice":"name_only_risk"}
+{"id":"fresh-zh34","lang":"zh","name":"外币代付跑腿","bio":"","labels":["promotion","scam"],"why":"Nickname offers proxy payment under frozen financial policy","slice":"name_only_risk"}
+{"id":"fresh-zh35","lang":"zh","name":"本圈值班版务","bio":"","labels":["impersonation"],"why":"Nickname claims a current moderation role","slice":"name_only_risk"}
+{"id":"fresh-zh36","lang":"zh","name":"橡果钱包认证接待","bio":"","labels":["impersonation"],"why":"Fictional wallet's certified reception role claim","slice":"name_only_risk"}
+{"id":"fresh-zh37","lang":"zh","name":"青灯论坛官方值守","bio":"","labels":["impersonation"],"why":"Fictional forum's official duty account claim","slice":"name_only_risk"}
+{"id":"fresh-zh38","lang":"zh","name":"社群副群主阿岚","bio":"","labels":["impersonation"],"why":"Nickname claims deputy group ownership","slice":"name_only_risk"}
+{"id":"fresh-zh39","lang":"zh","name":"售私人裸拍套图","bio":"","labels":["promotion","adult"],"why":"Nickname sells explicit photo sets","slice":"name_only_risk"}
+{"id":"fresh-zh40","lang":"zh","name":"成人色情片包月订阅","bio":"","labels":["promotion","adult"],"why":"Nickname offers pornography subscriptions","slice":"name_only_risk"}
+{"id":"fresh-zh41","lang":"zh","name":"橙盒收益","bio":"拒绝骗局，但把闲钱放我这，每月稳拿三成。","labels":["promotion","scam"],"why":"Anti-scam disclaimer does not cancel promised returns","slice":"denial_risk"}
+{"id":"fresh-zh42","lang":"zh","name":"礼盒通知站","bio":"不是骗钱，先付认证款就能领取中奖礼盒。","labels":["promotion","scam"],"why":"Denial accompanies an advance-fee prize solicitation","slice":"denial_risk"}
+{"id":"fresh-zh43","lang":"zh","name":"夜色相册","bio":"出售无遮掩的色情写真，付款后发全集。","labels":["promotion","adult"],"why":"Explicit adult content sale in bio","slice":"adult_control"}
+{"id":"fresh-zh44","lang":"zh","name":"晚间档","bio":"付费安排性服务，预约请留言。","labels":["promotion","adult"],"why":"Paid sexual service invitation","slice":"adult_control"}
+{"id":"fresh-zh45","lang":"zh","name":"若水","bio":"由拾光社区授权处理成员申诉，可找我登记。","labels":["impersonation"],"why":"Claims delegated official moderation authority","slice":"role_control"}
+{"id":"fresh-zh46","lang":"zh","name":"陆屿","bio":"我是林间云盘的官方账号恢复专员。","labels":["impersonation"],"why":"Claims official support role for a fictional service","slice":"role_control"}
+{"id":"fresh-zh47","lang":"zh","name":"礼印工坊","bio":"◆贴纸◆徽章◆吊牌◆ 接单！接单！接单！","labels":["promotion","ad_formatting"],"why":"Product list and repeated transaction calls","slice":"format_control"}
+{"id":"fresh-zh48","lang":"zh","name":"纸盒仓","bio":"纸箱￥2 礼袋￥3 封套￥1 下单下单下单！","labels":["promotion","ad_formatting"],"why":"Price list and repeated order call","slice":"format_control"}
+{"id":"fresh-en01","lang":"en","name":"Thimble","bio":"","labels":[],"why":"Object nickname without offer or role","slice":"ordinary"}
+{"id":"fresh-en02","lang":"en","name":"Last tram home","bio":"","labels":[],"why":"Personal phrase and empty bio","slice":"ordinary"}
+{"id":"fresh-en03","lang":"en","name":"q7r","bio":"","labels":[],"why":"Random short nickname alone is not risk evidence","slice":"ordinary"}
+{"id":"fresh-en04","lang":"en","name":"Puddle...","bio":"","labels":[],"why":"Mild punctuation is not advertising formatting","slice":"ordinary"}
+{"id":"fresh-en05","lang":"en","name":"Cedar 🧵","bio":"","labels":[],"why":"One decorative emoji with personal nickname","slice":"ordinary"}
+{"id":"fresh-en06","lang":"en","name":"Half a postcard","bio":"","labels":[],"why":"Poetic nickname without risk content","slice":"ordinary"}
+{"id":"fresh-en07","lang":"en","name":"Maren","bio":"Apprentice bookbinder. Learning to mend old atlases.","labels":[],"why":"Occupation and learning without business invitation","slice":"ordinary"}
+{"id":"fresh-en08","lang":"en","name":"Copper kettle","bio":"Recording the sounds of ferries on my morning commute.","labels":[],"why":"Personal hobby and routine","slice":"ordinary"}
+{"id":"fresh-en09","lang":"en","name":"Soren","bio":"Card fraud analyst; I do not handle private transfers.","labels":[],"why":"Financial occupation, explicitly not selling money services","slice":"ordinary"}
+{"id":"fresh-en10","lang":"en","name":"Ribbon spool","bio":"Sorting my grandfather's collection of radio recordings.","labels":[],"why":"Personal archive with no solicitation","slice":"ordinary"}
+{"id":"fresh-en11","lang":"en","name":"Low tide","bio":"I won't pay a 'release fee' to collect a prize.","labels":[],"why":"Refuses an advance-fee demand","slice":"anti_scam"}
+{"id":"fresh-en12","lang":"en","name":"Paper crane","bio":"An invite promising sixfold payouts went straight to my bin.","labels":[],"why":"Rejects a suspicious profit solicitation","slice":"anti_scam"}
+{"id":"fresh-en13","lang":"en","name":"Mossy steps","bio":"Stop asking to borrow my bank card. I will report it.","labels":[],"why":"Refuses account lending for money collection","slice":"anti_scam"}
+{"id":"fresh-en14","lang":"en","name":"Static notebook","bio":"Fake staking screenshots are not proof of earnings.","labels":[],"why":"Debunks a financial claim without promoting services","slice":"anti_scam"}
+{"id":"fresh-en15","lang":"en","name":"North window","bio":"Lost funds? Don't pay strangers promising recovery.","labels":[],"why":"Warns against paid recovery solicitations","slice":"anti_scam"}
+{"id":"fresh-en16","lang":"en","name":"Rook's perch","bio":"Never give recovery words to a supposed wallet helper.","labels":[],"why":"Anti-phishing warning, not a support identity claim","slice":"anti_scam"}
+{"id":"fresh-en17","lang":"en","name":"Side aisle","bio":"Just a visitor here; I cannot resolve member complaints.","labels":[],"why":"Denies moderation authority","slice":"role_negative"}
+{"id":"fresh-en18","lang":"en","name":"Dune sketch","bio":"Please don't treat me as staff. Ask the event organizers.","labels":[],"why":"Rejects staff identity and points to another party","slice":"role_negative"}
+{"id":"fresh-en19","lang":"en","name":"Bracket fern","bio":"I once wrote forum tools. These days I only read posts.","labels":[],"why":"Former software work is not a current staff claim","slice":"role_negative"}
+{"id":"fresh-en20","lang":"en","name":"Slow sundial","bio":"Not a help desk account. Open a ticket with your vendor.","labels":[],"why":"Explicitly denies official support role","slice":"role_negative"}
+{"id":"fresh-en21","lang":"en","name":"Wheel marks","bio":"My kiln diary has its own channel; fellow potters are welcome.","group":"Ceramics practice club","labels":[],"why":"Channel invitation is on topic for ceramics group","slice":"context_normal"}
+{"id":"fresh-en22","lang":"en","name":"Wild ink","bio":"Taking orders for my booklet of mushroom sketches.","group":"Fungi illustration circle","labels":[],"why":"Plain-format product promotion matches group topic","slice":"context_normal"}
+{"id":"fresh-en23","lang":"en","name":"Contour fold","bio":"I made route cards for our walks; members can collect one.","group":"Weekend walking routes","labels":[],"why":"Relevant group resource without unrelated promotion","slice":"context_normal"}
+{"id":"fresh-en24","lang":"en","name":"Quiet margin","bio":"Notes on library books. I don't run paid communities.","labels":[],"why":"Personal notes and refusal of paid-group business","slice":"context_normal"}
+{"id":"fresh-en25","lang":"en","name":"Book your cello repair","bio":"","labels":["promotion"],"why":"Nickname solicits instrument repairs","slice":"name_only_risk"}
+{"id":"fresh-en26","lang":"en","name":"Yearbook layouts for hire","bio":"","labels":["promotion"],"why":"Nickname offers paid design services","slice":"name_only_risk"}
+{"id":"fresh-en27","lang":"en","name":"Reserve cat boarding here","bio":"","labels":["promotion"],"why":"Nickname invites boarding orders","slice":"name_only_risk"}
+{"id":"fresh-en28","lang":"en","name":"Follow my vintage pen channel","bio":"","labels":["promotion"],"why":"Nickname promotes an unrelated channel","slice":"name_only_risk"}
+{"id":"fresh-en29","lang":"en","name":"Espresso machine repairs booked","bio":"","labels":["promotion"],"why":"Nickname offers appliance repair appointments","slice":"name_only_risk"}
+{"id":"fresh-en30","lang":"en","name":"Wedding place cards on commission","bio":"","labels":["promotion"],"why":"Nickname solicits design commissions","slice":"name_only_risk"}
+{"id":"fresh-en31","lang":"en","name":"Rent your bank account for cash","bio":"","labels":["promotion","scam"],"why":"Nickname recruits money-mule account rental","slice":"name_only_risk"}
+{"id":"fresh-en32","lang":"en","name":"Open horse racing bets here","bio":"","labels":["promotion","scam"],"why":"Nickname offers gambling participation","slice":"name_only_risk"}
+{"id":"fresh-en33","lang":"en","name":"Lock coins for fixed daily interest","bio":"","labels":["promotion","scam"],"why":"Nickname promises daily financial returns","slice":"name_only_risk"}
+{"id":"fresh-en34","lang":"en","name":"Overseas bill payments for clients","bio":"","labels":["promotion","scam"],"why":"Nickname offers proxy payments under existing policy","slice":"name_only_risk"}
+{"id":"fresh-en35","lang":"en","name":"On-duty community moderator","bio":"","labels":["impersonation"],"why":"Nickname claims a current moderation role","slice":"name_only_risk"}
+{"id":"fresh-en36","lang":"en","name":"Acorn Wallet certified help desk","bio":"","labels":["impersonation"],"why":"Claims certified support for fictional wallet","slice":"name_only_risk"}
+{"id":"fresh-en37","lang":"en","name":"Lantern Forum verified staff","bio":"","labels":["impersonation"],"why":"Claims verified staff of fictional forum","slice":"name_only_risk"}
+{"id":"fresh-en38","lang":"en","name":"Deputy community owner Rowan","bio":"","labels":["impersonation"],"why":"Nickname claims group ownership authority","slice":"name_only_risk"}
+{"id":"fresh-en39","lang":"en","name":"Buy my explicit nude photo sets","bio":"","labels":["promotion","adult"],"why":"Nickname sells explicit adult images","slice":"name_only_risk"}
+{"id":"fresh-en40","lang":"en","name":"Porn film subscriptions available","bio":"","labels":["promotion","adult"],"why":"Nickname offers adult content subscriptions","slice":"name_only_risk"}
+{"id":"fresh-en41","lang":"en","name":"Amber yield box","bio":"No fraud here: park cash with me for a fixed 30% each month.","labels":["promotion","scam"],"why":"Denial does not cancel promised investment returns","slice":"denial_risk"}
+{"id":"fresh-en42","lang":"en","name":"Parcel award desk","bio":"Not a con. Pay the validation charge to receive your prize box.","labels":["promotion","scam"],"why":"Denial accompanies advance-fee prize solicitation","slice":"denial_risk"}
+{"id":"fresh-en43","lang":"en","name":"Velvet album","bio":"Selling uncensored porn portraits; pay to unlock the full set.","labels":["promotion","adult"],"why":"Explicit adult content sale in bio","slice":"adult_control"}
+{"id":"fresh-en44","lang":"en","name":"Late appointment","bio":"Paid sexual appointments available; message for a booking.","labels":["promotion","adult"],"why":"Solicits paid sexual services","slice":"adult_control"}
+{"id":"fresh-en45","lang":"en","name":"Elowen","bio":"Authorized by Hearth Circle to handle member appeals.","labels":["impersonation"],"why":"Claims delegated moderation authority","slice":"role_control"}
+{"id":"fresh-en46","lang":"en","name":"Iver","bio":"I am the official account recovery specialist for Birch Drive.","labels":["impersonation"],"why":"Claims official support for fictional storage service","slice":"role_control"}
+{"id":"fresh-en47","lang":"en","name":"Pressroom prints","bio":"◆ DECALS ◆ BADGES ◆ TAGS ◆ ORDER! ORDER! ORDER!","labels":["promotion","ad_formatting"],"why":"Product list and repeated order calls","slice":"format_control"}
+{"id":"fresh-en48","lang":"en","name":"Parcel stockroom","bio":"BOXES $2 BAGS $3 SLEEVES $1 BUY BUY BUY!","labels":["promotion","ad_formatting"],"why":"Price list and repeated transaction call","slice":"format_control"}

@@ -1,6 +1,7 @@
 package docgen
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -10,7 +11,51 @@ import (
 
 	"tadmin/internal/captcha"
 	"tadmin/internal/config"
+	"tadmin/internal/store"
 )
+
+func TestSchemaIncludesMigrations(t *testing.T) {
+	s, err := store.OpenMemory(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	tables, err := loadSchema(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]bool{}
+	for _, table := range tables {
+		if seen[table.Name] {
+			t.Fatalf("duplicate table %s", table.Name)
+		}
+		seen[table.Name] = true
+		rows, err := s.DB().Query(`SELECT name,type FROM pragma_table_info(?) ORDER BY cid`, table.Name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var got []column
+		for rows.Next() {
+			var c column
+			if err := rows.Scan(&c.Name, &c.Type); err != nil {
+				t.Fatal(err)
+			}
+			got = append(got, c)
+		}
+		if err := rows.Err(); err != nil {
+			t.Fatal(err)
+		}
+		rows.Close()
+		if len(got) != len(table.Columns) {
+			t.Fatalf("%s has %d columns, docs have %d", table.Name, len(got), len(table.Columns))
+		}
+		for i, c := range got {
+			if c != table.Columns[i] {
+				t.Fatalf("%s column %d mismatch: %+v vs %+v", table.Name, i, c, table.Columns[i])
+			}
+		}
+	}
+}
 
 const root = "../.."
 

@@ -1,6 +1,11 @@
 packages:
   - docs
 
+# VitePress 1.x accepts Vite 6; pin the security fixes without a docs framework migration.
+overrides:
+  vite: 6.4.3
+  source-map-js: 1.2.2
+
 # esbuild (via VitePress/Vite) installs its native binary in a postinstall script.
 allowBuilds:
   esbuild: true

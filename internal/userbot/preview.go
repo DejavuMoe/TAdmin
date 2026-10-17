@@ -92,10 +92,10 @@ func (m *Manager) sendToBot(ctx context.Context, api *tg.Client, text string) (*
 	case tgerr.Is(err, "YOU_BLOCKED_USER"):
 		m.log.Info("preview bot was blocked, unblocking")
 		if _, uerr := api.ContactsUnblock(ctx, &tg.ContactsUnblockRequest{ID: peer}); uerr != nil {
-			return nil, 0, m.observe(uerr)
+			return nil, 0, m.observe(api, uerr)
 		}
 		if _, serr := m.send(ctx, api, peer, "/start"); serr != nil {
-			return nil, 0, m.observe(serr)
+			return nil, 0, m.observe(api, serr)
 		}
 		id, err = m.send(ctx, api, peer, text)
 	case tgerr.Is(err, "PEER_ID_INVALID", "USER_ID_INVALID", "INPUT_USER_DEACTIVATED"):
@@ -108,7 +108,7 @@ func (m *Manager) sendToBot(ctx context.Context, api *tg.Client, text string) (*
 		id, err = m.send(ctx, api, peer, text)
 	}
 	if err != nil {
-		return nil, 0, m.observe(err)
+		return nil, 0, m.observe(api, err)
 	}
 	if id == 0 {
 		// Fall back to looking up our own message.
@@ -148,7 +148,7 @@ func (m *Manager) botPeer(ctx context.Context, api *tg.Client) (*tg.InputPeerUse
 	}
 	res, err := api.ContactsResolveUsername(ctx, &tg.ContactsResolveUsernameRequest{Username: m.opts.BotUsername})
 	if err != nil {
-		return nil, m.observe(err)
+		return nil, m.observe(api, err)
 	}
 	p, err := peerFromResolved(res)
 	if err != nil {
@@ -200,7 +200,7 @@ func (m *Manager) awaitReply(ctx context.Context, api *tg.Client, peer *tg.Input
 			if rctx.Err() != nil {
 				continue // reported by the select above
 			}
-			mapped := m.observe(err)
+			mapped := m.observe(api, err)
 			var fw *FloodWaitError
 			if errors.As(mapped, &fw) || errors.Is(mapped, ErrNotReady) {
 				return nil, mapped
@@ -237,7 +237,7 @@ func firstReply(hist tg.MessagesMessagesClass, sentID int) *tg.Message {
 func (m *Manager) lastOutgoingID(ctx context.Context, api *tg.Client, peer *tg.InputPeerUser, text string) (int, error) {
 	hist, err := api.MessagesGetHistory(ctx, &tg.MessagesGetHistoryRequest{Peer: peer, Limit: 10})
 	if err != nil {
-		return 0, m.observe(err)
+		return 0, m.observe(api, err)
 	}
 	if mod, ok := hist.AsModified(); ok {
 		for _, mc := range mod.GetMessages() { // newest first

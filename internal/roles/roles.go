@@ -29,7 +29,8 @@ type Cache struct {
 	mu    sync.Mutex
 	chats map[int64]*entry
 	// flight coalesces concurrent refreshes of the same chat.
-	flight map[int64]chan struct{}
+	flight     map[int64]chan struct{}
+	generation uint64
 }
 
 // New creates a cache.
@@ -47,6 +48,7 @@ func (c *Cache) IsOwner(userID int64) bool { return userID == c.owner }
 func (c *Cache) Invalidate(chatID int64) {
 	c.mu.Lock()
 	delete(c.chats, chatID)
+	c.generation++
 	c.mu.Unlock()
 }
 
@@ -69,12 +71,17 @@ func (c *Cache) Admins(ctx context.Context, chatID int64) (map[int64]tg.ChatMemb
 		}
 		ch := make(chan struct{})
 		c.flight[chatID] = ch
+		generation := c.generation
 		c.mu.Unlock()
 
 		list, err := c.src.GetChatAdministrators(ctx, chatID)
 		c.mu.Lock()
 		delete(c.flight, chatID)
 		close(ch)
+		if generation != c.generation {
+			c.mu.Unlock()
+			continue // an update invalidated this snapshot while the request was in flight
+		}
 		if err != nil {
 			c.mu.Unlock()
 			return nil, err

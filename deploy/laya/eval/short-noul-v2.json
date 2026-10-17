@@ -1,0 +1,42 @@
+{
+  "promotion": {
+    "type": "noul",
+    "instructions": "Do the account's name, username or bio promote goods, services, a channel or a group unrelated to this group's topic?",
+    "criteria": {
+      "false": "No promotion, a warning or refusal, or only an on-topic project or offer.",
+      "true": "The account invites buying, booking, subscribing or joining something unrelated to the group's topic."
+    }
+  },
+  "scam": {
+    "type": "noul",
+    "instructions": "Does this account offer profit schemes, gambling, fake giveaways, money-mule work, OTC exchange or proxy payments? Warnings, refusals and quotations of scams are not offers.",
+    "criteria": {
+      "false": "Only warns against scams, refuses offers, or describes a personal interest or job.",
+      "true": "The account solicits money, bets or financial services."
+    }
+  },
+  "adult": {
+    "type": "noul",
+    "instructions": "Does this profile advertise sexual content or services?",
+    "criteria": {
+      "false": "No sexual advertising.",
+      "true": "Advertises sexual content or services."
+    }
+  },
+  "impersonation": {
+    "type": "noul",
+    "instructions": "Does the name, username or bio claim a group admin, moderator or official support role? A role-only name is a claim even with an empty bio.",
+    "criteria": {
+      "false": "No staff claim; denial of the role or merely discussing staff.",
+      "true": "Self-identification as staff, including an admin or official-support nickname."
+    }
+  },
+  "ad_formatting": {
+    "type": "noul",
+    "instructions": "Is this profile formatted like an advertisement?",
+    "criteria": {
+      "false": "Ordinary personal profile formatting.",
+      "true": "Advertising style formatting."
+    }
+  }
+}

@@ -31,7 +31,8 @@ release:
 	@rm -f $(DIST)/$(APP)-linux-* $(DIST)/SHA256SUMS
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GO) build -trimpath -ldflags "$(LDFLAGS)" -o $(DIST)/$(APP)-linux-amd64 ./cmd/tadmin
 	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GO) build -trimpath -ldflags "$(LDFLAGS)" -o $(DIST)/$(APP)-linux-arm64 ./cmd/tadmin
-	cd $(DIST) && sha256sum $(APP)-linux-amd64 $(APP)-linux-arm64 > SHA256SUMS
+	cp LICENSE THIRD_PARTY_NOTICES.txt $(DIST)/
+	cd $(DIST) && sha256sum $(APP)-linux-amd64 $(APP)-linux-arm64 LICENSE THIRD_PARTY_NOTICES.txt > SHA256SUMS
 
 docker:
 	docker build --build-arg VERSION=$(VERSION) -t $(APP):$(VERSION) .

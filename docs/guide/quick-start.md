@@ -1,6 +1,6 @@
 # 五分钟上手
 
-整个过程不需要域名，也不需要编辑任何配置文件。
+基础验证不需要域名。先准备测试超级群和普通小号；完整步骤见 [部署指南](./deployment)。
 
 <Steps>
 
@@ -14,9 +14,13 @@
    ::: code-group
 
    ```sh [Docker Compose]
+   cp .env.example .env
    cp tadmin.env.example tadmin.env
    # 编辑 tadmin.env：填写 TADMIN_BOT_TOKEN 与 TADMIN_OWNER_ID
-   docker compose up -d
+   chmod 600 .env tadmin.env
+   docker compose build
+   docker compose run --rm tadmin check
+   docker compose up -d --no-build
    docker compose logs -f
    ```
 
@@ -61,6 +65,6 @@
 
 | 想要 | 需要 | 文档 |
 |---|---|---|
-| Mini App 大图验证、Guard 零窗口入群 | 一个 HTTPS 域名与反向代理 | [部署 → Mini App](./deployment#可选-mini-app-与-guard) |
+| Mini App 大图验证、Guard 入群 | 一个 HTTPS 域名与反向代理 | [部署指南](./deployment) |
 | 链接预览刷新 | 一个 Telegram 用户号（建议小号）与 api_id / api_hash | [预览刷新](/features/preview) |
-| AI 入群资料风险提示 | TypeSafe API Key | [防护与安全](/features/protection#ai-入群资料风险提示) |
+| AI 入群资料风险提示 | Jev API Key，逐群设为仅提示；Laya 暂停 | [防护与安全](/features/protection#ai-入群资料风险提示) |

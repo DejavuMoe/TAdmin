@@ -223,6 +223,14 @@
       {
         "name": "closed_at",
         "type": "INTEGER"
+      },
+      {
+        "name": "mute_until",
+        "type": "INTEGER"
+      },
+      {
+        "name": "user_bio",
+        "type": "TEXT"
       }
     ]
   },

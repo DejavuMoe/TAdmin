@@ -2,6 +2,6 @@
 # Application / module versions live in go.mod; app release tag is set via Make VERSION.
 
 [tools]
-go = "1.27.1"
+go = "1.27.2"
 node = "24.19.0"
 pnpm = "12.5.1"

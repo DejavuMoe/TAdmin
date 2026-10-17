@@ -14,6 +14,7 @@ const sidebar: DefaultTheme.Sidebar = {
       text: '部署与配置',
       items: [
         { text: '部署方式', link: '/guide/deployment' },
+        { text: 'Laya 实验记录（暂停）', link: '/guide/laya' },
         { text: '配置参考', link: '/guide/configuration' },
         { text: '权限与角色', link: '/guide/permissions' },
       ],
@@ -47,6 +48,8 @@ const sidebar: DefaultTheme.Sidebar = {
         { text: '备份与恢复', link: '/operations/backup' },
         { text: '故障排查', link: '/operations/troubleshooting' },
         { text: '上线验收清单', link: '/operations/acceptance' },
+        { text: 'CI 与发版', link: '/operations/releasing' },
+        { text: '本地发布准备验收', link: '/operations/preflight' },
       ],
     },
   ],
@@ -55,6 +58,7 @@ const sidebar: DefaultTheme.Sidebar = {
       text: '设计',
       items: [
         { text: '架构总览', link: '/design/' },
+        { text: '当前功能架构图', link: '/design/current-map' },
         { text: '入群状态机', link: '/design/state-machine' },
         { text: '安全模型', link: '/design/security' },
         { text: '数据与存储', link: '/design/data' },

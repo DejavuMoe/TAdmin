@@ -1,14 +1,14 @@
 {
   "version": "v2.0.0-dev",
-  "updated": "2026-09-30",
-  "go_version": "1.27.0",
-  "toolchain": "1.27.1",
+  "updated": "2026-10-18",
+  "go_version": "1.27.2",
+  "toolchain": "1.27.2",
   "deps": [
     "github.com/gotd/log v0.1.0",
     "github.com/gotd/td v0.162.0",
     "github.com/pelletier/go-toml/v2 v2.4.3",
     "golang.org/x/image v0.46.0",
-    "golang.org/x/net v0.59.0",
+    "golang.org/x/net v0.60.0",
     "golang.org/x/sys v0.48.0",
     "golang.org/x/text v0.42.0",
     "modernc.org/sqlite v1.59.0",
@@ -16,12 +16,12 @@
   ],
   "counts": {
     "bot_api_methods": 36,
-    "env_vars": 14,
+    "env_vars": 17,
     "i18n_keys": 419,
     "packages": 17,
     "tables": 8,
-    "test_packages": 15,
-    "tests": 151
+    "test_packages": 16,
+    "tests": 194
   },
   "packages": [
     "internal/app",

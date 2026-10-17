@@ -11,9 +11,20 @@
 /config.docker.toml
 /tadmin.env
 /.env
+!/.env.example
+/.env.laya
 *.db.lock
 
 # docs site
 node_modules/
 docs/.vitepress/cache/
 docs/.vitepress/dist/
+
+# Local audit tooling and Python caches are not product sources.
+/.agents/skills/security-audit/
+__pycache__/
+*.py[cod]
+/.env.*
+!/.env.example
+!/.env.*.example
+/backups/

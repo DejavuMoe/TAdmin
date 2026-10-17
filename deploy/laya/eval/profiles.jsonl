@@ -1,0 +1,80 @@
+{"id":"zh01","lang":"zh","name":"小周","bio":"","labels":[],"why":"空简介不是风险证据"}
+{"id":"zh02","lang":"zh","name":"阿宁🌿","bio":"晚饭后散步。","labels":[],"why":"普通昵称加一个表情"}
+{"id":"zh03","lang":"zh","name":"xq7","bio":"潜水学习","labels":[],"why":"随机昵称不构成广告"}
+{"id":"zh04","lang":"zh","name":"陈","last_name":"晨","bio":"后端工程师，周末做饭。","labels":[],"why":"职业及爱好"}
+{"id":"zh05","lang":"zh","name":"小石","bio":"研究区块链，不提供投资建议。","labels":[],"why":"兴趣而非收益承诺或服务"}
+{"id":"zh06","lang":"zh","name":"阿远","bio":"警惕刷单骗局，不要给陌生人转账。","labels":[],"why":"反诈骗提醒"}
+{"id":"zh07","lang":"zh","name":"禾苗","bio":"学习性教育与公共健康。","labels":[],"why":"教育兴趣，无色情推广"}
+{"id":"zh08","lang":"zh","name":"小陆","bio":"普通群友，不是管理员。","labels":[],"why":"明确否认管理身份"}
+{"id":"zh09","lang":"zh","name":"Admir","bio":"学中文中","labels":[],"why":"人名不是管理身份"}
+{"id":"zh10","lang":"zh","name":"晓雯","bio":"大三，正在学 Rust。","labels":[],"why":"学生自我介绍"}
+{"id":"zh11","lang":"zh","name":"清和","bio":"已婚，养猫。","labels":[],"why":"关系状态不是性服务"}
+{"id":"zh12","lang":"zh","name":"青木","bio":"出售 Go 入门课程，欢迎咨询。","group":"Go 编程交流","labels":[],"why":"推广与群主题相符，朴素句式"}
+{"id":"zh13","lang":"zh","name":"阿川","username":"chuan_dev","bio":"分享自己写的 Go 日志库。","labels":[],"why":"同主题开源分享"}
+{"id":"zh14","lang":"zh","name":"小桐","bio":"平时写后端程序，周末骑车和做饭。最近在学数据库，希望在群里交流学习笔记，也喜欢看看大家分享的项目。","labels":[],"why":"较长但普通的自我介绍"}
+{"id":"zh15","lang":"zh","name":"知夏","premium":true,"bio":"住在海边，工作日写程序，休息时读小说、种花和练习吉他。最近开始学习 Go，希望在这里请教语法和测试问题，也会分享自己的练习笔记。我通常晚上上线，回复可能比较慢，看到消息后会认真阅读。","labels":[],"why":"Premium 长简介，无商业或角色声明"}
+{"id":"zh16","lang":"zh","name":"手机维修","bio":"换屏换电池，私聊预约。","labels":["promotion"],"why":"编程群中的无关维修服务"}
+{"id":"zh17","lang":"zh","name":"阿东","bio":"出售二手自行车，有意私聊。","labels":["promotion"],"why":"无关商品售卖"}
+{"id":"zh18","lang":"zh","name":"鲜花订购","bio":"","labels":["promotion"],"why":"仅昵称明确招揽订购"}
+{"id":"zh19","lang":"zh","name":"小店","username":"buy_phone_cases","bio":"手机壳现货，可下单。","labels":["promotion"],"why":"用户名及简介招揽交易"}
+{"id":"zh20","lang":"zh","name":"阿陶","bio":"我的折扣频道欢迎订阅。","labels":["promotion"],"why":"无关商业频道推广；短问法未明确写频道"}
+{"id":"zh21","lang":"zh","name":"稳赚计划","bio":"每天保本赚百分之十，私聊入金。","labels":["promotion","scam"],"why":"保证收益与入金招揽"}
+{"id":"zh22","lang":"zh","name":"在线赌场","bio":"注册即送筹码，来下注。","labels":["promotion","scam"],"why":"赌博推广"}
+{"id":"zh23","lang":"zh","name":"跑分接单","bio":"","labels":["promotion","scam"],"why":"昵称招揽资金跑分"}
+{"id":"zh24","lang":"zh","name":"小币","bio":"USDT 承兑代付，联系我办理。","labels":["promotion","scam"],"why":"原规则将承兑代付服务归入诈骗风险，非犯罪事实断言"}
+{"id":"zh25","lang":"zh","name":"阿福","bio":"免费空投，先付手续费即可领币。","labels":["promotion","scam"],"why":"先付费领取的虚假空投诱导"}
+{"id":"zh26","lang":"zh","name":"私密视频","bio":"售卖成人视频，私聊购买。","labels":["promotion","adult"],"why":"明确色情内容售卖"}
+{"id":"zh27","lang":"zh","name":"同城服务","bio":"提供付费性服务，私聊预约。","labels":["promotion","adult"],"why":"明确付费性服务"}
+{"id":"zh28","lang":"zh","name":"成人视频售卖","bio":"","labels":["promotion","adult"],"why":"仅昵称明确色情交易"}
+{"id":"zh29","lang":"zh","name":"夜色","bio":"加入我的色情视频频道。","labels":["promotion","adult"],"why":"色情频道引流"}
+{"id":"zh30","lang":"zh","name":"小影","bio":"订阅我的裸照合集，每周更新。","labels":["promotion","adult"],"why":"裸照订阅推广"}
+{"id":"zh31","lang":"zh","name":"本群管理员","bio":"","labels":["impersonation"],"why":"昵称自称群管理员，不推断真实权限"}
+{"id":"zh32","lang":"zh","name":"Telegram 官方客服","bio":"处理账号问题。","labels":["impersonation"],"why":"声明官方客服身份"}
+{"id":"zh33","lang":"zh","name":"阿宏","bio":"我是本群版主。","labels":["impersonation"],"why":"简介声明管理角色"}
+{"id":"zh34","lang":"zh","name":"客服","username":"official_support","bio":"官方账号申诉专员。","labels":["impersonation"],"why":"用户名及简介声明官方身份"}
+{"id":"zh35","lang":"zh","name":"小安","bio":"本平台官方安全团队。","labels":["impersonation"],"why":"官方团队身份声明"}
+{"id":"zh36","lang":"zh","name":"🔥优惠店🔥","bio":"手机✅配件✅低价✅私聊下单✅","labels":["promotion","ad_formatting"],"why":"商品列表、符号堆叠与交易号召"}
+{"id":"zh37","lang":"zh","name":"【推广】【引流】【代发】","bio":"","labels":["promotion","ad_formatting"],"why":"昵称服务关键词堆叠"}
+{"id":"zh38","lang":"zh","name":"小铺","bio":"💰💰特价！特价！现在买！现在买！","labels":["promotion","ad_formatting"],"why":"重复购买号召与表情堆叠"}
+{"id":"zh39","lang":"zh","name":"维修站","bio":"【换屏】【电池】【上门】☎️☎️速约速约","labels":["promotion","ad_formatting"],"why":"无关服务广告排版"}
+{"id":"zh40","lang":"zh","name":"礼品仓","bio":"🎁🎁现货✅包邮✅批发✅秒发✅快来买✅","labels":["promotion","ad_formatting"],"why":"价格优惠式关键词及密集符号"}
+{"id":"en01","lang":"en","name":"Maya","bio":"","labels":[],"why":"Empty bio is not evidence"}
+{"id":"en02","lang":"en","name":"Noah ☕","bio":"Tea and rainy afternoons.","labels":[],"why":"One decorative emoji and a hobby"}
+{"id":"en03","lang":"en","name":"k9z","bio":"Just here to learn.","labels":[],"why":"Unusual nickname is not an advertisement"}
+{"id":"en04","lang":"en","name":"Priya","last_name":"K","bio":"Database engineer. Amateur baker.","labels":[],"why":"Occupation and hobby only"}
+{"id":"en05","lang":"en","name":"Owen","bio":"Interested in crypto research, not selling signals.","labels":[],"why":"Interest without financial services"}
+{"id":"en06","lang":"en","name":"Leah","bio":"Watch out for fake giveaways. Never send advance fees.","labels":[],"why":"Anti-scam warning"}
+{"id":"en07","lang":"en","name":"Nora","bio":"Studying sexual health education.","labels":[],"why":"Educational interest, not adult promotion"}
+{"id":"en08","lang":"en","name":"Eli","bio":"Regular member, not a moderator.","labels":[],"why":"Explicit denial of staff role"}
+{"id":"en09","lang":"en","name":"Admir K","bio":"Learning to cook.","labels":[],"why":"Personal name resembles admin but makes no claim"}
+{"id":"en10","lang":"en","name":"Iris","bio":"First year student learning SQL.","labels":[],"why":"Student introduction"}
+{"id":"en11","lang":"en","name":"Sam","bio":"Married. Cat parent.","labels":[],"why":"Relationship status only"}
+{"id":"en12","lang":"en","name":"Kai","bio":"I sell Go lessons. Contact me for details.","group":"Go programming","labels":[],"why":"On-topic promotion in plain prose"}
+{"id":"en13","lang":"en","name":"Tessa","username":"tessa_codes","bio":"Sharing my open source Go parser.","labels":[],"why":"On-topic open source project"}
+{"id":"en14","lang":"en","name":"Robin","bio":"I write APIs, bake bread and learn databases in my spare time.","labels":[],"why":"Ordinary longer bio"}
+{"id":"en15","lang":"en","name":"Morgan","premium":true,"bio":"I build small tools for fun, learn Go after work, and spend weekends cycling. Here to discuss tests and share project notes.","labels":[],"why":"Premium-length personal bio without promotion"}
+{"id":"en16","lang":"en","name":"Phone repair","bio":"Screen replacements. Message me to book.","labels":["promotion"],"why":"Unrelated repair service"}
+{"id":"en17","lang":"en","name":"Harper","bio":"Selling my old bicycle. Contact me if interested.","labels":["promotion"],"why":"Unrelated item for sale"}
+{"id":"en18","lang":"en","name":"Buy fresh flowers","bio":"","labels":["promotion"],"why":"Name alone advertises goods"}
+{"id":"en19","lang":"en","name":"Cases","username":"order_phone_cases","bio":"Phone cases in stock. Orders welcome.","labels":["promotion"],"why":"Username and bio solicit sales"}
+{"id":"en20","lang":"en","name":"Dee","bio":"Subscribe to my daily discount channel.","labels":["promotion"],"why":"Commercial channel promotion, broader than goods/services wording"}
+{"id":"en21","lang":"en","name":"Profit club","bio":"Guaranteed daily returns. Send your deposit today.","labels":["promotion","scam"],"why":"Guaranteed returns with deposit solicitation"}
+{"id":"en22","lang":"en","name":"Casino entry","bio":"Sign up and claim free chips. Place your bets.","labels":["promotion","scam"],"why":"Gambling promotion"}
+{"id":"en23","lang":"en","name":"Paid money mule jobs","bio":"","labels":["promotion","scam"],"why":"Name recruits for money mule work"}
+{"id":"en24","lang":"en","name":"Token desk","bio":"USDT OTC exchange and proxy payments. Contact me.","labels":["promotion","scam"],"why":"Existing policy includes OTC services; not a factual fraud allegation"}
+{"id":"en25","lang":"en","name":"Reward helper","bio":"Free token airdrop. Pay a small fee to claim your coins.","labels":["promotion","scam"],"why":"Advance-fee giveaway solicitation"}
+{"id":"en26","lang":"en","name":"Private clips","bio":"Porn videos for sale. Message to buy.","labels":["promotion","adult"],"why":"Explicit porn sales"}
+{"id":"en27","lang":"en","name":"Private bookings","bio":"Paid sexual services. Message for appointments.","labels":["promotion","adult"],"why":"Explicit sexual service solicitation"}
+{"id":"en28","lang":"en","name":"Nude videos for sale","bio":"","labels":["promotion","adult"],"why":"Name alone advertises sexual content"}
+{"id":"en29","lang":"en","name":"Night channel","bio":"Join my pornography channel for new videos.","labels":["promotion","adult"],"why":"Porn channel promotion"}
+{"id":"en30","lang":"en","name":"Studio","bio":"Subscribe to my weekly nude photo collection.","labels":["promotion","adult"],"why":"Sexual content subscription"}
+{"id":"en31","lang":"en","name":"Group administrator","bio":"","labels":["impersonation"],"why":"Name claims admin role, actual authority unknown"}
+{"id":"en32","lang":"en","name":"Telegram official help","bio":"Official support for account issues.","labels":["impersonation"],"why":"Explicit official support claim"}
+{"id":"en33","lang":"en","name":"Jamie","bio":"I am a moderator of this group.","labels":["impersonation"],"why":"Bio claims moderator role"}
+{"id":"en34","lang":"en","name":"Help desk","username":"official_appeals","bio":"Official account appeals agent.","labels":["impersonation"],"why":"Username and bio claim official role"}
+{"id":"en35","lang":"en","name":"Safety team","bio":"We are the official security team for this platform.","labels":["impersonation"],"why":"Explicit official team claim"}
+{"id":"en36","lang":"en","name":"🔥SALE SHOP🔥","bio":"PHONES ✅ CASES ✅ CHEAP ✅ ORDER NOW ✅","labels":["promotion","ad_formatting"],"why":"Advertising keyword list with stacked symbols"}
+{"id":"en37","lang":"en","name":"[ADS][VIEWS][FOLLOWERS]","bio":"","labels":["promotion","ad_formatting"],"why":"Name alone lists promotional services"}
+{"id":"en38","lang":"en","name":"Bargains","bio":"💰💰 SALE! SALE! BUY NOW! BUY NOW!","labels":["promotion","ad_formatting"],"why":"Repeated purchase commands and emojis"}
+{"id":"en39","lang":"en","name":"Fix shop","bio":"[SCREENS][BATTERIES][REPAIRS] CALL NOW! CALL NOW!","labels":["promotion","ad_formatting"],"why":"Service list and repeated call to action"}
+{"id":"en40","lang":"en","name":"Gift depot","bio":"🎁🎁 STOCK ✅ FREE SHIPPING ✅ FAST ✅ BUY ✅","labels":["promotion","ad_formatting"],"why":"Advertising keywords with dense symbols"}

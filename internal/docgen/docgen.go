@@ -204,6 +204,7 @@ type table struct {
 }
 
 var createRe = regexp.MustCompile(`(?s)CREATE TABLE (\w+) \((.*?)\n\);`)
+var addColumnRe = regexp.MustCompile(`ALTER TABLE (\w+) ADD COLUMN (\w+) (\w+)`)
 
 func loadSchema(root string) ([]table, error) {
 	files, err := filepath.Glob(filepath.Join(root, "assets/migrations/*.sql"))
@@ -212,6 +213,7 @@ func loadSchema(root string) ([]table, error) {
 	}
 	sort.Strings(files)
 	var out []table
+	positions := map[string]int{}
 	for _, f := range files {
 		src, err := os.ReadFile(f)
 		if err != nil {
@@ -227,7 +229,19 @@ func loadSchema(root string) ([]table, error) {
 				}
 				t.Columns = append(t.Columns, column{Name: f[0], Type: f[1]})
 			}
-			out = append(out, t)
+			if i, ok := positions[t.Name]; ok {
+				out[i] = t
+			} else {
+				positions[t.Name] = len(out)
+				out = append(out, t)
+			}
+		}
+		for _, m := range addColumnRe.FindAllStringSubmatch(text, -1) {
+			i, ok := positions[m[1]]
+			if !ok {
+				return nil, fmt.Errorf("unknown table in migration: %s", m[1])
+			}
+			out[i].Columns = append(out[i].Columns, column{Name: m[2], Type: m[3]})
 		}
 	}
 	return out, nil

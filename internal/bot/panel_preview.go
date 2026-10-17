@@ -554,7 +554,7 @@ func (b *Bot) onKeypad(ctx context.Context, cq *tg.CallbackQuery, key string, ms
 	lang := b.lang
 	owner := b.cfg.OwnerID
 	s := b.sessions.get(owner)
-	if s == nil || s.kind != "code" {
+	if s == nil || s.kind != "code" || s.msgID != msgID {
 		b.answer(ctx, cq, t(lang, "cb_expired_panel"), false)
 		return
 	}

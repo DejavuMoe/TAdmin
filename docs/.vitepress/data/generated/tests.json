@@ -1,6 +1,51 @@
 {
-  "total": 151,
+  "total": 194,
   "packages": [
+    {
+      "package": "internal/gate",
+      "tests": [
+        "TestAIAdmissionPolicy",
+        "TestAdminRightsChangeInvalidatesCache",
+        "TestBotsAddedByMembersAreRemoved",
+        "TestCASCheckpointIncludesDecision",
+        "TestCooldownSchedule",
+        "TestDirectJoinWhileRequestPendingIsVerified",
+        "TestEarlierGateDoesNotOwnAdminMute",
+        "TestExemptions",
+        "TestGuardExpiredQueryFallsBackToApprove",
+        "TestHelpGoesToReviewAndAdminApproves",
+        "TestJevHintAblation",
+        "TestJoinRequestBioSurvivesProfileLookupFailure",
+        "TestJoinRequestFlow",
+        "TestJoinRequestUnreachableGoesToOwnerReview",
+        "TestLeaveAndRejoinDoesNotRestoreOwnMute",
+        "TestLeavingClosesWithoutBan",
+        "TestMissingRightsCancelsAndAlertsOwner",
+        "TestOverdueNewGateDoesNotSendExpiredMute",
+        "TestOverlayPassFlow",
+        "TestParseButtons",
+        "TestPausedChatSkipsNewcomers",
+        "TestPickToggleAndReset",
+        "TestPreservesEarlierAdminRestriction",
+        "TestPrivateDeliveryDeepLink",
+        "TestPromotedWhileVerifyingIsCancelled",
+        "TestPublicDelivery",
+        "TestRaidLockdown",
+        "TestResolvingRequestCannotSkipDirectJoin",
+        "TestReviewTimeoutRemoves",
+        "TestSchedulerRunsDueGates",
+        "TestServiceMessageFallbackDoesNotOverrideExemption",
+        "TestShortAdminRestrictionPreserved",
+        "TestTimeoutRemoves",
+        "TestTransientFailureRetriesAndRecovers",
+        "TestUndeliverableReviewTimeoutLetsUserIn",
+        "TestVerificationPreservesNewAdminMute",
+        "TestWebAppFlow",
+        "TestWebOpenPreparesRestoredNewGate",
+        "TestWebOpenRetryDoesNotReturnEmptyChallenge",
+        "TestWrongAnswersRemoveWithEscalatingCooldown"
+      ]
+    },
     {
       "package": "internal/preview/feeds",
       "tests": [
@@ -10,6 +55,7 @@
         "TestDiscoverSourceItself",
         "TestDiscoverTLSWithCustomClient",
         "TestDiscoverUnreachable",
+        "TestFailedChildrenConsumeFetchBudget",
         "TestFetchBlocksPrivateAddresses",
         "TestFetchConditional",
         "TestFetchGzip",
@@ -18,6 +64,7 @@
         "TestFetchSizeLimit",
         "TestFetchStatusError",
         "TestIsBlockedIP",
+        "TestJSONFeedItemBudget",
         "TestNormalizeURL",
         "TestParseAtom",
         "TestParseCharsets",
@@ -40,78 +87,31 @@
       ]
     },
     {
-      "package": "internal/gate",
-      "tests": [
-        "TestBotsAddedByMembersAreRemoved",
-        "TestCooldownSchedule",
-        "TestDirectJoinWhileRequestPendingIsVerified",
-        "TestExemptions",
-        "TestGuardExpiredQueryFallsBackToApprove",
-        "TestHelpGoesToReviewAndAdminApproves",
-        "TestJoinRequestFlow",
-        "TestJoinRequestUnreachableGoesToOwnerReview",
-        "TestLeaveAndRejoinDoesNotRestoreOwnMute",
-        "TestLeavingClosesWithoutBan",
-        "TestMissingRightsCancelsAndAlertsOwner",
-        "TestOverlayPassFlow",
-        "TestParseButtons",
-        "TestPausedChatSkipsNewcomers",
-        "TestPickToggleAndReset",
-        "TestPreservesEarlierAdminRestriction",
-        "TestPrivateDeliveryDeepLink",
-        "TestPromotedWhileVerifyingIsCancelled",
-        "TestPublicDelivery",
-        "TestRaidLockdown",
-        "TestReviewTimeoutRemoves",
-        "TestSchedulerRunsDueGates",
-        "TestServiceMessageFallbackDoesNotOverrideExemption",
-        "TestTimeoutRemoves",
-        "TestTransientFailureRetriesAndRecovers",
-        "TestUndeliverableReviewTimeoutLetsUserIn",
-        "TestWebAppFlow",
-        "TestWrongAnswersRemoveWithEscalatingCooldown"
-      ]
-    },
-    {
       "package": "internal/bot",
       "tests": [
+        "TestBackupWithoutSystemTemp",
         "TestChannelAutoUnpinAndCleanKeepsAdminPins",
         "TestChannelMaskBlocked",
         "TestDemoChallenge",
         "TestEntitiesToHTML",
         "TestEntitiesToHTMLNesting",
         "TestGroupCommands",
+        "TestInvalidModerationDurations",
+        "TestLayaPanelHintOnly",
         "TestMalformedCallbacksDoNotPanic",
         "TestNonAdminCannotOpenGroupPanel",
+        "TestOldKeypadCannotModifyReplacementSession",
         "TestOwnerAddsGroupGetsSetupCard",
         "TestPanelNavigationAndToggles",
         "TestPendingChatCannotBeActivatedByStranger",
         "TestPendingListNotLeakedToStrangers",
+        "TestPrivateDecisionCompletesBeforeUpdateBarrier",
         "TestServiceMessageCleanupAndGateEnforcement",
         "TestSparklineAndDurations",
         "TestStrangerAddsGroupNeedsAuthorization",
+        "TestUnpinSettingRequiresPinPermission",
+        "TestWelcomeSessionRechecksChatAuthorization",
         "TestWelcomeTextInputKeepsFormatting"
-      ]
-    },
-    {
-      "package": "internal/userbot",
-      "tests": [
-        "TestClassifyReply",
-        "TestCodeInfoFrom",
-        "TestFirstReply",
-        "TestManagerFloodPrecheck",
-        "TestManagerOffline",
-        "TestMapError",
-        "TestMaskPhone",
-        "TestNormalizeCode",
-        "TestNormalizePhone",
-        "TestObserveFloodSetsStatus",
-        "TestPeerFromResolved",
-        "TestQRFlowPushKeepsLatest",
-        "TestRenderQR",
-        "TestSentMessageID",
-        "TestSessionAdapter",
-        "TestTruncateRunes"
       ]
     },
     {
@@ -126,12 +126,40 @@
         "TestAssessTimeout",
         "TestBuildStateTruncatesAndOmitsIdentifiers",
         "TestClassify",
+        "TestLayaContract",
+        "TestLayaExportRequests",
+        "TestLayaLive",
+        "TestLayaOptions",
         "TestLevelString",
         "TestNewTypeSafeValidation",
         "TestOptionsStringRedactsKey",
         "TestParseRetryAfter",
         "TestQuestionsCoverRiskSignals",
         "TestTransportErrorDoesNotLeak"
+      ]
+    },
+    {
+      "package": "internal/userbot",
+      "tests": [
+        "TestCancelledLoginCannotComplete",
+        "TestClassifyReply",
+        "TestCodeInfoFrom",
+        "TestFirstReply",
+        "TestLogoutWaitsForAdmittedSessionWrite",
+        "TestManagerFloodPrecheck",
+        "TestManagerOffline",
+        "TestMapError",
+        "TestMaskPhone",
+        "TestNormalizeCode",
+        "TestNormalizePhone",
+        "TestObserveFloodSetsStatus",
+        "TestOldClientCannotRevokeReplacementSession",
+        "TestPeerFromResolved",
+        "TestQRFlowPushKeepsLatest",
+        "TestRenderQR",
+        "TestSentMessageID",
+        "TestSessionAdapter",
+        "TestTruncateRunes"
       ]
     },
     {
@@ -152,6 +180,34 @@
       ]
     },
     {
+      "package": "internal/store",
+      "tests": [
+        "TestChatMigrationConflictRollsBack",
+        "TestChatSettingsDefaultsAndUpdate",
+        "TestDeletedSourceCannotEnqueue",
+        "TestDeletedSourceQueueDoesNotAttachToNewSource",
+        "TestGateSourceFallbackPersists",
+        "TestGateUniqueOpenAndDue",
+        "TestPreviewObserveAndQueue",
+        "TestSingleInstanceLock",
+        "TestSourceIDMigrationPreservesData",
+        "TestStatsAcrossDST",
+        "TestStatsAndDeletions"
+      ]
+    },
+    {
+      "package": "internal/preview",
+      "tests": [
+        "TestDailyLimit",
+        "TestFloodWaitDoesNotConsumeFailureBudget",
+        "TestHTMLIsNotSuccessfulSourceCheck",
+        "TestIndexRechecksChildrenAndRejectsPartialWalk",
+        "TestMinGapSurvivesWakeups",
+        "TestSitemapChangesAreRefreshed",
+        "TestSourceBaselineMustSucceed"
+      ]
+    },
+    {
       "package": "internal/tg",
       "tests": [
         "TestCallDecodesResultAndErrors",
@@ -164,35 +220,20 @@
       ]
     },
     {
-      "package": "internal/store",
-      "tests": [
-        "TestChatSettingsDefaultsAndUpdate",
-        "TestGateUniqueOpenAndDue",
-        "TestPreviewObserveAndQueue",
-        "TestSingleInstanceLock",
-        "TestStatsAndDeletions"
-      ]
-    },
-    {
       "package": "internal/webapp",
       "tests": [
         "TestAPI",
         "TestInitDataValidation",
+        "TestInvalidRequestsCannotExhaustUserQuota",
         "TestPagesAndHealth",
+        "TestPendingGateIsRetryable",
         "TestRateLimitPerToken"
-      ]
-    },
-    {
-      "package": "assets/web",
-      "tests": [
-        "TestEmbeddedFiles",
-        "TestIndexReferences",
-        "TestNoExternalFetches"
       ]
     },
     {
       "package": "internal/config",
       "tests": [
+        "TestAIBackendConfig",
         "TestEnvOnlyConfig",
         "TestSampleParses",
         "TestValidation"
@@ -203,15 +244,16 @@
       "tests": [
         "TestConfigExampleMatchesSample",
         "TestGeneratedDocsUpToDate",
-        "TestMiniAppGridMatchesRenderer"
+        "TestMiniAppGridMatchesRenderer",
+        "TestSchemaIncludesMigrations"
       ]
     },
     {
-      "package": "internal/preview",
+      "package": "assets/web",
       "tests": [
-        "TestDailyLimit",
-        "TestMinGapSurvivesWakeups",
-        "TestSitemapChangesAreRefreshed"
+        "TestEmbeddedFiles",
+        "TestIndexReferences",
+        "TestNoExternalFetches"
       ]
     },
     {
@@ -225,6 +267,12 @@
       "package": "internal/app",
       "tests": [
         "TestRunEndToEnd"
+      ]
+    },
+    {
+      "package": "internal/roles",
+      "tests": [
+        "TestInvalidationDuringRefresh"
       ]
     }
   ]
