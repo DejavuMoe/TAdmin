@@ -1,6 +1,6 @@
 # 本地发布准备验收
 
-核对日期：2026-10-18。目标是让下一次 master 镜像推送具备可重复的验收条件。本页记录当前工作区，不能替代尚未发生的 GitHub CI、版本发布或服务器试用。
+核对日期：2026-10-18。本页记录本地检查和首次 Forgejo → GitHub 同步验收，不能替代尚未发生的版本发布或服务器试用。后续提交仍需核对各自的 CI 结果。
 
 ## 范围与保持不变的决定
 
@@ -53,7 +53,11 @@
 | AMD64/ARM64 镜像与隔离恢复 | 两架构均实际运行通过；ARM64 为本地仿真。断网、非 root、只读根目录、备份拒绝覆盖与临时卷恢复均通过 |
 | 可选反向代理模板 | Nginx `-t`（临时自签证书）与 Caddy `validate` 在断网容器中通过；没有对外监听或申请真实证书 |
 | Linux 双架构发布构建与许可证 | `make release VERSION=ci` 与四个文件的 SHA256SUMS 校验通过；39 份依赖/运行库/字体声明生成结果一致 |
-| GitHub CI/CodeQL、正式 Release、服务器与真实群 | 尚未运行，不用本地结果代替 |
+| GitHub CI/CodeQL | `ad7b286ecc6039be6b2febd458b0b711b5b4b102` 的 [CI #2](https://github.com/DejavuMoe/TAdmin/actions/runs/39063615553) 全部通过，含 acceptance；Go、JS/TS、Python、Actions 四项 CodeQL 均为 0 条结果、无分析错误或警告 |
+| GitHub 依赖与凭据告警 | 已启用 Dependabot alerts；验收时 Dependabot、CodeQL、secret scanning 均无开放告警 |
+| 正式 Release、服务器与真实群 | 尚未运行，不用 CI 结果代替；本次没有创建标签或发布版本 |
+
+提交前发现 Git 换行转换会改变冻结响应的字节哈希，现以 `.gitattributes` 保留评测数据原始字节，16 份数据文件与 Git 入库内容逐字节核对通过。首次 CI 的 Compose 检查因 runner 要求 `tadmin.env` 存在而失败，已改为仅在 CI 工作区从示例文件生成，再完成基础和可选 Compose 校验；真实部署仍要求自己的配置文件。
 
 已知依赖背景：当前 `govulncheck` 将 [GO-2026-5932](https://pkg.go.dev/vuln/GO-2026-5932) 标为模块内不可达问题；涉及的 `golang.org/x/crypto/openpgp` 没有被产品导入。保留扫描，不使用整个模块忽略规则。Go 字体版权和 MIT-0 声明由许可证脚本显式补入；脚本同时扫描 AMD64、ARM64 依赖。
 

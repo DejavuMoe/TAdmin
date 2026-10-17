@@ -2,7 +2,7 @@
 
 ## v2.0.0（开发中）
 
-<Badge type="warning" text="待首次 GitHub CI 与实群验收" /> <Badge type="tip" text="2026-10-18" />
+<Badge type="warning" text="CI 已通过，待实群验收" /> <Badge type="tip" text="2026-10-18" />
 
 当前处于公开开源和首次试用准备阶段，尚未发布稳定版。实现、自动化测试、真实 Telegram 行为分别验收，不用“审查通过”代替运行证据。
 
@@ -15,6 +15,7 @@
 - 新迁移保留既有订阅源，避免 ID 复用；保存入群简介与机器人禁言期限。升级前备份，回滚须配套快照。
 - 重写 A1、Compose、systemd、HTTPS、备份恢复和发布说明，区分必须配置和可选功能。
 - 保留 Jev 原问题和阈值，试用采用仅提示；Laya 暂停。冻结评测及 Jev 提示消融记录保留。
+- 首次 Forgejo → GitHub 同步和完整 CI 已验收，四项 CodeQL 无告警；修复冻结数据的 Git 换行转换和干净 runner 的 Compose 配置检查。准确提交和运行链接见 [验收记录](/operations/preflight)。
 
 ### 已实现的产品范围
 
@@ -24,7 +25,7 @@
 
 ### 发布前仍需外部验证
 
-- Forgejo → GitHub 首次同步及准确提交的全部 Actions 结果，CodeQL 告警和 PR dependency review。
+- 后续每次提交的 Actions、CodeQL 告警，以及 PR 专用的 dependency review；首次 master CI 通过不代替后续提交或 PR 验收。
 - 实际 Telegram Token、小号、权限、浮层、Guard、用户号登录与 @WebpageBot 回复。
 - 稳定标签授权后的 Release、GHCR 公开拉取、双架构清单和构建证明。
 - Oracle A1 真机资源占用与持续运行；本地 ARM64 仿真通过不能替代真机负载验证。

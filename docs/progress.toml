@@ -11,7 +11,7 @@
 
 version = "v2.0.0-dev"
 updated = "2026-10-18"
-headline = "公开开源与首次部署准备中：采用 MIT、GitHub Actions 和双架构镜像检查；真实 Telegram、GitHub 首次运行与服务器试用尚待验收。"
+headline = "采用 MIT，Forgejo → GitHub 同步及首次完整 CI 已通过，四项 CodeQL 无告警；真实 Telegram 与服务器试用尚待验收。"
 
 [[milestone]]
 title = "TAdmin 2 设计与重写"
@@ -34,8 +34,8 @@ desc = "VitePress 文档站已实现；配置、命令、状态机、数据结�
 [[milestone]]
 title = "工程基线：CI、Docker 镜像与发布构建"
 date = "2026-10-18"
-status = "next"
-desc = "切换为 GitHub Actions：Go 质量与竞态、CodeQL、依赖审计、Gitleaks、文档及 AMD64/ARM64 镜像检查；稳定标签通过后发布二进制与 GHCR。GitHub 首次镜像运行尚未验证。"
+status = "done"
+desc = "GitHub CI #2 已通过 Go 质量与竞态、四项 CodeQL、依赖审计、Gitleaks、文档及 AMD64/ARM64 镜像检查。发布流程已配置但尚未执行，没有创建标签或部署服务器。"
 
 [[milestone]]
 title = "真实 Telegram 测试群验收"
