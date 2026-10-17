@@ -48,6 +48,7 @@ jobs:
         run: |
           go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
           bash -n scripts/*.sh
+          cp tadmin.env.example tadmin.env
           docker compose --env-file .env.example config --no-env-resolution --quiet
           LAYA_API_KEY=ci-validation-only docker compose --env-file .env.example --env-file .env.laya.example -f compose.yaml -f compose.laya.yaml config --no-env-resolution --quiet
       - name: Secret scan (entire history)
