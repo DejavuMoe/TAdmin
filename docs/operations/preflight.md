@@ -61,6 +61,25 @@
 
 已知依赖背景：当前 `govulncheck` 将 [GO-2026-5932](https://pkg.go.dev/vuln/GO-2026-5932) 标为模块内不可达问题；涉及的 `golang.org/x/crypto/openpgp` 没有被产品导入。保留扫描，不使用整个模块忽略规则。Go 字体版权和 MIT-0 声明由许可证脚本显式补入；脚本同时扫描 AMD64、ARM64 依赖。
 
+## v0.1.0 版本与 Debian ARM64 文档候选
+
+2026-10-18，在已验收提交 `d0564f8e27c0b33177bb33bf628bd8602447c34f` 上补齐本轮候选检查。改动包括 `v0.1.0-dev` 开发版本、正式产物同版本约定、Debian 12／13 ARM64 的 [A1 逐步部署手册](/guide/oracle-a1)及文档入口；没有修改 Jev 原问题、阈值或入群业务逻辑。手册仍固定上述已验收源码。
+
+| 检查 | 本轮本地结果 |
+|---|---|
+| 格式、模块、静态检查 | gofmt 无差异，`go mod verify`、tidy 后模块文件哈希核对、`go vet ./...` 通过 |
+| 完整竞态回归 | `go test -race -count=1 ./...` 通过，未复用测试结果缓存 |
+| 漏洞与许可证 | govulncheck 无可达漏洞，pnpm audit 无已知漏洞；39 份第三方声明与生成结果一致 |
+| 文档与评测工具 | `docgen -check`、VitePress 构建、14 项离线 Python 测试通过 |
+| 部署与工作流 | actionlint、所有 shell 脚本、手册 12 段 Bash 语法通过；基础、A1、Jev 故障覆盖与恢复、可选 Laya Compose 仅用假凭据校验通过 |
+| 固定源码入口 | 手册指定提交的公开源码归档下载返回 HTTP 200；没有在服务器执行下载或安装 |
+| 本地版本打包 | `make release VERSION=v0.1.0` 的双架构二进制内置版本及 SHA256SUMS 已验证；只生成本地文件 |
+| 双架构候选镜像 | `VERSION=v0.1.0` 的 AMD64、ARM64 镜像均通过 `scripts/verify-image.sh`：版本、非 root、只读根目录、离线数据库自检、备份拒绝覆盖及隔离恢复；ARM64 为本地仿真 |
+
+WSL 构建镜像没有 `.git`，actionlint 必须显式传入 `.github/workflows/*.yml`，不能依赖其自动查找 Git 项目。Compose 检查使用临时目录和假密钥，不覆盖真实配置；镜像运行检查禁用网络，不连接 Telegram 或模型服务。
+
+以上是提交前的本地记录。推送后应以该候选准确提交的 GitHub Actions、四项 CodeQL 分析和开放告警为最终远端验收依据；不沿用上表首次 CI 的结果。真实 A1、Telegram 客户端、Jev 连通性及正式 tag / Release / GHCR 发布仍属后续阶段。
+
 ## 首次试用范围与限制
 
 先用专用测试群和普通小号验证默认入群流程，CAS、Jev 和用户号分别开启；开启 Jev 时选仅提示。hint 只约束 Jev，验证码超时、管理员命令与 CAS 命中仍有管理动作。

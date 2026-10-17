@@ -27,7 +27,7 @@ import (
 	"tadmin/internal/webapp"
 )
 
-// Version is set at build time with -ldflags "-X tadmin/internal/app.Version=v2.x.y".
+// Version is set at build time with -ldflags "-X tadmin/internal/app.Version=v0.1.0".
 var Version = "dev"
 
 // sessionStore persists the userbot session in the meta table.

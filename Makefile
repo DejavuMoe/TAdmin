@@ -1,5 +1,5 @@
 APP     := tadmin
-VERSION ?= v2.0.0-dev
+VERSION ?= v0.1.0-dev
 GO      ?= go
 DIST    := dist
 LDFLAGS := -s -w -X tadmin/internal/app.Version=$(VERSION)

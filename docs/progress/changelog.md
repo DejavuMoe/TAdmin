@@ -1,6 +1,6 @@
 # 更新日志
 
-## v2.0.0（开发中）
+## v0.1.0（准备中，未发布）
 
 <Badge type="warning" text="CI 已通过，待实群验收" /> <Badge type="tip" text="2026-10-18" />
 
@@ -8,6 +8,7 @@
 
 ### 本轮准备
 
+- 首个稳定版计划为 `v0.1.0`，后续 tag、Release、二进制内置版本与 GHCR 精确版本标签始终取同一 Git tag。新增 [Debian ARM64 / Oracle A1 试部署手册](/guide/oracle-a1)，固定已验收提交；本轮不创建标签、不发布、不操作服务器。
 - 采用 MIT，发行包和镜像携带依赖、Go 运行库与 Go 字体的许可证声明。
 - 唯一维护远程继续为 Forgejo，自动同步 GitHub。GitHub Actions 执行质量、竞态、CodeQL、依赖、凭据、文档和双架构镜像检查；稳定版本标签才触发发布，不自动部署。
 - 升级 Go 1.27.2、x/net 0.60.0，以及文档构建链的 Vite/source-map-js 安全版本。

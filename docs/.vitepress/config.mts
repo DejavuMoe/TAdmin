@@ -14,6 +14,7 @@ const sidebar: DefaultTheme.Sidebar = {
       text: '部署与配置',
       items: [
         { text: '部署方式', link: '/guide/deployment' },
+        { text: 'Oracle A1 试部署（Debian）', link: '/guide/oracle-a1' },
         { text: 'Laya 实验记录（暂停）', link: '/guide/laya' },
         { text: '配置参考', link: '/guide/configuration' },
         { text: '权限与角色', link: '/guide/permissions' },

@@ -6,6 +6,21 @@
 
 普通 master 推送只检查和构建。发布由另行授权的稳定版本标签触发，不自动部署服务器，当前也不假定已有发行版。
 
+## 统一版本约定
+
+首个稳定版计划为 **`v0.1.0`**。所有后续稳定版都使用带 `v` 的 `vMAJOR.MINOR.PATCH`，同一次发布的版本完全一致：
+
+| 产物 | 首版的值 |
+|---|---|
+| Git tag / GitHub Release tag 与标题 | `v0.1.0` |
+| 两个 Linux 二进制的 `tadmin version` | `TAdmin v0.1.0 (...)` |
+| GHCR 多架构镜像标签 | `ghcr.io/dejavumoe/tadmin:v0.1.0` |
+| 发布后部署的 `TADMIN_VERSION` | `v0.1.0` |
+
+`.github/workflows/ci.yml` 的 release job 已将 `VERSION` 设为 `github.ref_name`：同一个值传入 `make release`、Docker build argument、镜像 tag 和 `gh release create`。保留这一单一来源，后续如 `v0.1.1` 不分别手改二进制或镜像版本，也不增加无 `v` 的别名或 `latest`。资产名仍为 `tadmin-linux-amd64` / `tadmin-linux-arm64`，版本由所属 Release、内置版本、校验和与构建证明确认。
+
+源码默认开发版本为 `v0.1.0-dev`；直接 `go build` 未注入版本时为 `dev`。固定提交试用使用 `v0.1.0-dev.d0564f8` 这类本地标识，不创建相应 Git tag。`make release VERSION=...` 只在本地生成文件；真正上传由获得授权后的稳定标签流水线执行。
+
 ## 检查范围
 
 | 检查 | 作用 |
@@ -55,8 +70,8 @@ PLATFORM=linux/arm64 bash scripts/verify-image.sh tadmin:ci-arm64 ci
 
 1. GitHub 上 master 的准确提交完成全部 CI，核对镜像 SHA 与 Forgejo 一致。
 2. 复核 CodeQL、依赖、变更记录和 [真实群验收](/operations/acceptance)。本地通过不能替代。
-3. 明确授权版本后，在 Windows 正本创建稳定标签，例如 `v2.0.0`，仅推送到 Forgejo；确认标签同步包括目标提交。
+3. 明确授权版本后，在 Windows 正本创建稳定标签，例如 `v0.1.0`，仅推送到 Forgejo；确认标签同步包括目标提交。
 4. 标签 CI 再跑全部检查并确认该提交属于 master，然后生成 Linux AMD64/ARM64 二进制、SHA256SUMS、二进制构建证明和带 SBOM/provenance 的 GHCR 多架构镜像。
-5. 检查 Release 资产、GHCR digest、两个平台清单和匿名公开拉取。不要移动已发布标签，也不要把发布成功当成部署成功。
+5. 检查 Release 资产、GHCR digest、两个平台清单和匿名公开拉取；分别执行两个架构的二进制与镜像 `version`，确认均为本次 tag。平台运行需要相应真机或明确记录的仿真环境。不要移动已发布标签，也不要把发布成功当成部署成功。
 
 只生成精确版本镜像标签，不维护隐含升级的 latest。失败后先检查已生成的产物，不覆盖发布版本；修复用新版本。校验及证明验证方法见 [部署指南](/guide/deployment)。

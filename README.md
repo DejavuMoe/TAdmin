@@ -19,7 +19,11 @@
 
 ## 首次试用
 
-先阅读 [详细部署指南](docs/guide/deployment.md)，准备测试超级群和普通小号。在已有源码目录执行：
+先阅读 [详细部署指南](docs/guide/deployment.md)，准备测试超级群和普通小号。
+
+Oracle A1 4 OCPU / 24 GB、Debian 12／13 ARM64 可使用 [固定已验收提交的逐步部署与验收手册](docs/guide/oracle-a1.md)。首个稳定版本计划为 `v0.1.0`，尚未创建 tag 或发布产物。
+
+一般部署在已有源码目录执行：
 
 ```sh
 cp .env.example .env
@@ -32,7 +36,7 @@ docker compose up -d --no-build
 docker compose exec tadmin tadmin healthcheck
 ```
 
-默认从当前源码构建 `tadmin:local`，不假设版本镜像已发布。发布后可使用 GHCR 版本标签或 digest。端口仅绑定 `127.0.0.1`，数据保存在命名卷；不要执行 `docker compose down -v`。
+默认从当前源码构建 `tadmin:v0.1.0-dev`，不假设版本镜像已发布。发布后可使用 GHCR 版本标签或 digest。端口仅绑定 `127.0.0.1`，数据保存在命名卷；不要执行 `docker compose down -v`。
 
 ## 文档与开发
 

@@ -1,5 +1,5 @@
 {
-  "version": "v2.0.0-dev",
+  "version": "v0.1.0-dev",
   "updated": "2026-10-18",
   "go_version": "1.27.2",
   "toolchain": "1.27.2",

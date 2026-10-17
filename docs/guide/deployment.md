@@ -2,6 +2,8 @@
 
 先在测试超级群完成 [实机验收](/operations/acceptance)，再接入正式群。本指南是手动操作步骤；仓库准备工作不会自动连接服务器、启动机器人或创建版本标签。
 
+Oracle A1 4 OCPU / 24 GB、Debian 12／13 ARM64 的首次试用，请直接使用 [逐步复制的 A1 手册](./oracle-a1)。它固定已验收提交，包含 Docker 安装、Jev 仅提示设置和本轮测试群验收。
+
 ## 部署选择与资源
 
 | 环境 | 建议 |
@@ -47,7 +49,7 @@ chmod 600 .env tadmin.env
 
 | 文件 | 用途 | 首次填写 |
 |---|---|---|
-| `.env` | Compose 插值 | 保留 `TADMIN_IMAGE=tadmin:local`、`TADMIN_VERSION=dev`、`TADMIN_HTTP_PORT=8080`；VERSION 可改成记录的提交标识 |
+| `.env` | Compose 插值 | 保留 `TADMIN_IMAGE=tadmin:v0.1.0-dev`、`TADMIN_VERSION=v0.1.0-dev`、`TADMIN_HTTP_PORT=8080`；试用时可为镜像和 VERSION 同时附上提交标识 |
 | `tadmin.env` | 机器人配置 | `TADMIN_BOT_TOKEN`、`TADMIN_OWNER_ID`、`TADMIN_TIMEZONE` |
 
 真实值不要贴到 issue、日志附件或 Git。Docker 管理员能读取容器环境变量，主机访问权应按持有机器人凭据处理。特殊字符按 [Compose env_file 规则](https://docs.docker.com/compose/how-tos/environment-variables/variable-interpolation/)填写。
@@ -125,7 +127,7 @@ Jev 接收昵称、用户名、简介、群标题等资料字段，不发送群�
 
 ## 使用已发布镜像
 
-仅当对应标签 CI、GitHub Release 和 GHCR 均已存在并验收后，才改用版本镜像，例如 `.env` 的 `TADMIN_IMAGE=ghcr.io/dejavumoe/tadmin:v2.0.0`。此处是格式示例，不代表该版本已发布；长期运行可固定核对过的 digest。
+仅当对应标签 CI、GitHub Release 和 GHCR 均已存在并验收后，才改用版本镜像，例如 `.env` 的 `TADMIN_IMAGE=ghcr.io/dejavumoe/tadmin:v0.1.0`、`TADMIN_VERSION=v0.1.0`。此处是格式示例，不代表该版本已发布；长期运行可固定核对过的 digest，并记录对应版本。
 
 ```sh
 docker compose pull

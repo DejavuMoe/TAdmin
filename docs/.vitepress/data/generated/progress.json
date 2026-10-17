@@ -1,5 +1,5 @@
 {
-  "version": "v2.0.0-dev",
+  "version": "v0.1.0-dev",
   "updated": "2026-10-18",
   "headline": "采用 MIT，Forgejo → GitHub 同步及首次完整 CI 已通过，四项 CodeQL 无告警；真实 Telegram 与服务器试用尚待验收。",
   "milestones": [
