@@ -3,3 +3,7 @@
 * text=auto eol=lf
 *.png binary
 *.ico binary
+# Frozen evaluation data uses byte hashes; preserve its original line endings.
+/deploy/laya/eval/*.json -text
+/deploy/laya/eval/*.jsonl -text
+/docs/diagnostics/*.json -text
